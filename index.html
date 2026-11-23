@@ -284,11 +284,13 @@
 
     // --- ПЕРЕМЕННЫЕ ---
     let gameState = 'playing'; // playing, paused, gameover, menu
+    let prevGameState = 'playing'; 
     let score = 0;
     let highScore = parseInt(localStorage.getItem('neonjump_highscore') || '0');
     
     let particles = [];
     let stars = [];
+    let nebulas = []; // Для фона
 
     const GRAVITY = 0.55;
     const JUMP_FORCE = -15;
@@ -312,7 +314,6 @@
     let touchStartX = null;
     let touchCurrentX = null;
 
-    // Инициализация рекорда в UI
     document.getElementById('highscore').innerText = highScore;
 
     window.addEventListener('keydown', (e) => {
@@ -384,12 +385,29 @@
         }
     }
 
+    // --- УЛУЧШЕННЫЙ ФОН ---
     function initStars() {
         stars = [];
-        for(let i=0; i<80; i++) {
+        for(let i=0; i<100; i++) {
             stars.push({
-                x: Math.random() * width, y: Math.random() * height,
-                size: Math.random() * 2.5 + 1, speed: Math.random() * 2 + 1
+                x: Math.random() * width, 
+                y: Math.random() * height,
+                size: Math.random() * 2 + 0.5, 
+                speed: Math.random() * 3 + 1,
+                layer: Math.random() > 0.5 ? 1 : 2 // 1 - фон, 2 - передний план
+            });
+        }
+        
+        // Туманности (Nebulas)
+        nebulas = [];
+        const colors = ['rgba(0, 255, 255, 0.05)', 'rgba(255, 0, 255, 0.05)', 'rgba(100, 0, 255, 0.05)'];
+        for(let i=0; i<5; i++) {
+            nebulas.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                radius: Math.random() * 200 + 100,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                speed: Math.random() * 0.5 + 0.2
             });
         }
     }
@@ -460,7 +478,16 @@
             const scroll = height / 3 - player.y;
             player.y += scroll;
             platforms.forEach(p => p.y += scroll);
-            stars.forEach(s => { s.y += scroll * 0.5; if(s.y > height) s.y = 0; });
+            
+            // Прокрутка фона
+            stars.forEach(s => { 
+                s.y += scroll * (s.layer === 1 ? 0.3 : 0.8); 
+                if(s.y > height) s.y = 0; 
+            });
+            nebulas.forEach(n => {
+                n.y += scroll * n.speed;
+                if(n.y - n.radius > height) n.y = -n.radius;
+            });
             
             score += Math.floor(scroll);
             document.getElementById('score').innerText = score;
@@ -478,7 +505,6 @@
         if (player.y > height + 150) {
             gameState = 'gameover';
             
-            // Проверка рекорда
             let isNewRecord = false;
             if (score > highScore) {
                 highScore = score;
@@ -496,18 +522,36 @@
     }
 
     function draw() {
-        ctx.fillStyle = '#000';
+        // --- УЛУЧШЕННЫЙ ФОН ---
+        // Базовый черный градиент
+        const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
+        bgGradient.addColorStop(0, '#050510');
+        bgGradient.addColorStop(1, '#000000');
+        ctx.fillStyle = bgGradient;
         ctx.fillRect(0, 0, width, height);
 
-        stars.forEach(s => {
-            s.y -= 1;
-            if (s.y < 0) { s.y = height; s.x = Math.random() * width; }
-            ctx.fillStyle = `rgba(255, 255, 255, ${s.speed / 3})`;
+        // Туманности
+        nebulas.forEach(n => {
+            const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.radius);
+            grad.addColorStop(0, n.color);
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
             ctx.beginPath();
-            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
             ctx.fill();
         });
 
+        // Звезды
+        stars.forEach(s => {
+            s.y -= s.speed;
+            if (s.y < 0) { s.y = height; s.x = Math.random() * width; }
+            ctx.fillStyle = `rgba(255, 255, 255, ${s.layer === 1 ? 0.2 : 0.6})`;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.layer === 1 ? s.size * 0.5 : s.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // Платформы со свечением
         platforms.forEach(p => {
             if (p.broken && p.breakTimer <= 0) return;
 
@@ -516,16 +560,27 @@
             else if (p.type === 'breakable') { topColor = p.broken ? '#f00' : '#ffaa00'; sideColor = '#b35900'; }
             else { topColor = '#00ffff'; sideColor = '#008888'; }
 
-            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            // Тень
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
             ctx.fillRect(p.x + 5, p.y + 5, p.width, p.height);
+            
+            // Боковая грань
             ctx.fillStyle = sideColor;
             ctx.fillRect(p.x, p.y, p.width, p.height + 5);
+            
+            // Верхняя грань со свечением
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = topColor;
             ctx.fillStyle = topColor;
             ctx.fillRect(p.x, p.y, p.width, p.height);
+            
+            // Блик
+            ctx.shadowBlur = 0;
             ctx.fillStyle = 'rgba(255,255,255,0.5)';
             ctx.fillRect(p.x, p.y, p.width, 3);
         });
 
+        // Частицы
         particles.forEach(pt => {
             ctx.globalAlpha = pt.life;
             ctx.fillStyle = pt.color;
@@ -533,6 +588,7 @@
         });
         ctx.globalAlpha = 1;
 
+        // Игрок
         ctx.save();
         ctx.translate(player.x + player.width/2, player.y + player.height/2);
         ctx.rotate(player.tilt);
@@ -541,8 +597,12 @@
         ctx.fillRect(-player.width/2 + 5, -player.height/2 + 5, player.width, player.height);
         ctx.fillStyle = '#888';
         ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height + 4);
+        
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#fff';
         ctx.fillStyle = player.color;
         ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
+        ctx.shadowBlur = 0;
         
         ctx.fillStyle = '#000';
         const eyeOffset = player.tilt > 0 ? 3 : (player.tilt < 0 ? -3 : 0);
@@ -573,30 +633,37 @@
         }
     }
 
+    // ИСПРАВЛЕНИЕ БАГА С МЕНЮ
     function openMenu() {
-        if (gameState === 'playing') togglePause();
+        if (gameState !== 'menu' && gameState !== 'gameover') {
+            prevGameState = gameState;
+            gameState = 'menu';
+        }
         document.getElementById('menu-modal').classList.add('open');
     }
 
     function closeMenu() {
         document.getElementById('menu-modal').classList.remove('open');
+        
+        // Возвращаем игру в предыдущее состояние, если это была не пауза
+        if (gameState === 'menu') {
+            if (prevGameState === 'playing') {
+                gameState = 'playing';
+            } else if (prevGameState === 'paused') {
+                gameState = 'paused';
+                document.getElementById('pause-modal').classList.add('open');
+            } else {
+                // Если пришли из Game Over, перезапускаем игру
+                restartGame(); 
+            }
+        }
     }
 
-    // ФУНКЦИЯ ДЛЯ ПЕРЕХОДА В ГЛАВНОЕ МЕНЮ ИЗ ИГРЫ ИЛИ GAME OVER
     function goToMenu() {
-        gameState = 'menu'; // Меняем состояние, чтобы игра не обновлялась
+        gameState = 'menu';
+        prevGameState = 'gameover';
         document.getElementById('game-over-modal').classList.remove('open');
         document.getElementById('pause-modal').classList.remove('open');
-        
-        // Сбрасываем игровые параметры (но не трогаем рекорд)
-        player.x = width / 2 - 20;
-        player.y = height - 150;
-        player.vy = 0;
-        player.tilt = 0;
-        score = 0;
-        document.getElementById('score').innerText = '0';
-        
-        // Открываем меню настроек как "главное меню"
         document.getElementById('menu-modal').classList.add('open');
     }
 
