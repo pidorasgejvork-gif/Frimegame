@@ -3,71 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Jump</title>
+    <title>NEON JUMP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@900&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background: #050510; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Segoe UI', sans-serif; touch-action: none; }
-        canvas { display: block; box-shadow: 0 0 50px rgba(0, 255, 255, 0.2); }
-        #ui { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; text-shadow: 0 0 10px #0ff; font-family: monospace; font-size: 24px; font-weight: bold; }
-        #game-over { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); padding: 30px; border-radius: 20px; border: 2px solid #f0f; text-align: center; display: none; color: white; box-shadow: 0 0 30px #f0f; }
-        #game-over h1 { margin: 0 0 10px 0; color: #f0f; font-size: 32px; }
-        #game-over p { margin: 0 0 20px 0; color: #aaa; font-size: 16px; }
-        #game-over button { background: #0ff; border: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; color: #000; transition: 0.2s; }
-        #game-over button:hover { background: #fff; box-shadow: 0 0 20px #0ff; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            margin: 0; padding: 0; overflow: hidden; background: #000; 
+            display: flex; justify-content: center; align-items: center; height: 100vh; 
+            font-family: 'Outfit', sans-serif; touch-action: none; 
+        }
+        canvas { display: block; }
+        
+        #ui { 
+            position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
+            color: #fff; pointer-events: none; text-align: center; z-index: 10;
+        }
+        #score-label {
+            font-size: 14px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;
+            opacity: 0.7; margin-bottom: -5px;
+        }
+        #score {
+            font-size: 42px; font-weight: 900; letter-spacing: -1px;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+
+        #game-over { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            color: #fff; z-index: 20;
+        }
+        #game-over h1 { 
+            font-size: 60px; font-weight: 900; letter-spacing: -2px;
+            margin-bottom: 10px; text-shadow: 0 0 30px rgba(255,255,255,0.8);
+        }
+        #game-over p { 
+            font-size: 18px; font-weight: 900; color: #888; 
+            margin-bottom: 30px; letter-spacing: 2px;
+        }
+        #game-over .final-score {
+            font-size: 80px; font-weight: 900; color: #fff;
+            margin-bottom: 40px; text-shadow: 0 0 30px rgba(255,255,255,0.8);
+        }
+        #game-over button { 
+            background: #fff; border: none; padding: 15px 40px; 
+            border-radius: 50px; font-family: 'Outfit', sans-serif;
+            font-weight: 900; font-size: 20px; cursor: pointer; 
+            color: #000; transition: all 0.3s ease; letter-spacing: 1px;
+        }
+        #game-over button:hover { 
+            transform: scale(1.05); box-shadow: 0 0 30px rgba(255,255,255,0.5); 
+        }
     </style>
 </head>
 <body>
 
     <canvas id="gameCanvas"></canvas>
-    <div id="ui">SCORE: <span id="score">0</span></div>
+    
+    <div id="ui">
+        <div id="score-label">Score</div>
+        <div id="score">0</div>
+    </div>
     
     <div id="game-over">
         <h1>GAME OVER</h1>
-        <p>Твой результат: <span id="final-score">0</span></p>
-        <button onclick="restartGame()">Играть снова</button>
+        <p>FINAL SCORE</p>
+        <div class="final-score" id="final-score">0</div>
+        <button onclick="restartGame()">TRY AGAIN</button>
     </div>
 
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Адаптация под экран
     let width = window.innerWidth;
     let height = window.innerHeight;
-    if (width > 500) { width = 400; height = 700; } // Ограничиваем для ПК
+    if (width > 500) { width = 450; height = 800; } 
     canvas.width = width;
     canvas.height = height;
 
-    // --- СОСТОЯНИЕ ИГРЫ ---
-    let gameState = 'playing'; // 'playing', 'gameover'
+    let gameState = 'playing';
     let score = 0;
-    let cameraY = 0;
-    let maxHeight = 0;
+    let particles = [];
+    let stars = [];
 
-    // --- ФИЗИКА ---
     const GRAVITY = 0.5;
-    const JUMP_FORCE = -13;
-    const MOVE_SPEED = 6;
+    const JUMP_FORCE = -14;
+    
+    // --- НОВЫЕ НАСТРОЙКИ УПРАВЛЕНИЯ (БЕЗ ИНЕРЦИИ) ---
+    const MOVE_SPEED = 8; 
 
-    // --- ИГРОК ---
     const player = {
         x: width / 2,
-        y: height - 100,
-        vx: 0,
+        y: height - 150,
+        vx: 0, // Оставляем для визуального наклона
         vy: 0,
-        width: 30,
-        height: 30,
-        color: '#0ff'
+        width: 36,
+        height: 36,
+        color: '#fff',
+        tilt: 0
     };
 
-    // --- ПЛАТФОРМЫ ---
     let platforms = [];
-    const PLATFORM_WIDTH = 70;
-    const PLATFORM_HEIGHT = 15;
-    const PLATFORM_GAP = 80; // Расстояние между платформами
+    const PLATFORM_WIDTH = 80;
+    const PLATFORM_HEIGHT = 20;
+    const PLATFORM_GAP = 90;
 
-    // --- УПРАВЛЕНИЕ ---
     let keys = { left: false, right: false };
-    
+    let touchStartX = null;
+    let touchCurrentX = null;
+
     // Клавиатура
     window.addEventListener('keydown', (e) => {
         if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
@@ -78,36 +125,30 @@
         if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
     });
 
-    // Тач-управление (наклоны)
-    let touchStartX = null;
+    // Тач
     window.addEventListener('touchstart', (e) => {
         touchStartX = e.touches[0].clientX;
+        touchCurrentX = touchStartX;
     }, {passive: true});
     
     window.addEventListener('touchmove', (e) => {
         if (touchStartX === null) return;
-        const touchX = e.touches[0].clientX;
-        const diff = touchX - touchStartX;
-        
-        if (diff > 20) { keys.right = true; keys.left = false; }
-        else if (diff < -20) { keys.left = true; keys.right = false; }
+        touchCurrentX = e.touches[0].clientX;
     }, {passive: true});
 
     window.addEventListener('touchend', () => {
-        keys.left = false;
-        keys.right = false;
         touchStartX = null;
+        touchCurrentX = null;
     });
 
-    // --- ГЕНЕРАЦИЯ ПЛАТФОРМ ---
     function createPlatform(y, type = 'normal') {
         return {
             x: Math.random() * (width - PLATFORM_WIDTH),
             y: y,
             width: PLATFORM_WIDTH,
             height: PLATFORM_HEIGHT,
-            type: type, // 'normal', 'breakable', 'moving'
-            vx: type === 'moving' ? (Math.random() > 0.5 ? 2 : -2) : 0,
+            type: type,
+            vx: type === 'moving' ? (Math.random() > 0.5 ? 3 : -3) : 0,
             broken: false,
             breakTimer: 0
         };
@@ -115,206 +156,228 @@
 
     function initPlatforms() {
         platforms = [];
-        // Стартовая платформа под игроком
         platforms.push({
             x: width / 2 - PLATFORM_WIDTH / 2,
-            y: height - 50,
+            y: height - 100,
             width: PLATFORM_WIDTH,
             height: PLATFORM_HEIGHT,
             type: 'normal',
-            vx: 0,
-            broken: false,
-            breakTimer: 0
+            vx: 0, broken: false, breakTimer: 0
         });
 
-        // Генерируем начальные платформы
-        for (let y = height - 150; y > -height; y -= PLATFORM_GAP) {
+        for (let y = height - 200; y > -height; y -= PLATFORM_GAP) {
             let type = 'normal';
             const r = Math.random();
-            if (r < 0.2) type = 'breakable';
-            else if (r < 0.4) type = 'moving';
-            
+            if (r < 0.25) type = 'breakable';
+            else if (r < 0.5) type = 'moving';
             platforms.push(createPlatform(y, type));
         }
     }
 
     function generateNewPlatforms() {
-        // Находим самую высокую платформу (с минимальным Y)
         let minY = 0;
         platforms.forEach(p => { if (p.y < minY) minY = p.y; });
 
-        // Если до верхнего края экрана далеко, генерируем новые
         if (minY > -height) {
             let type = 'normal';
             const r = Math.random();
-            if (r < 0.2) type = 'breakable';
-            else if (r < 0.4) type = 'moving';
-            
+            if (r < 0.25) type = 'breakable';
+            else if (r < 0.5) type = 'moving';
             platforms.push(createPlatform(minY - PLATFORM_GAP, type));
         }
     }
 
-    // --- ЛОГИКА ---
+    function initStars() {
+        stars = [];
+        for(let i=0; i<60; i++) {
+            stars.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: Math.random() * 2 + 1,
+                speed: Math.random() * 2 + 1
+            });
+        }
+    }
+
     function update() {
         if (gameState !== 'playing') return;
 
-        // 1. Управление (горизонтальное движение)
-        if (keys.left) player.vx = -MOVE_SPEED;
-        else if (keys.right) player.vx = MOVE_SPEED;
-        else player.vx = 0;
+        // --- ИЗМЕНЕННОЕ УПРАВЛЕНИЕ (МГНОВЕННОЕ) ---
+        let moveDir = 0;
+        if (keys.left) moveDir = -1;
+        else if (keys.right) moveDir = 1;
+        
+        // Обработка тача (свайп работает как виртуальный джойстик)
+        if (touchStartX !== null && touchCurrentX !== null) {
+            const diff = touchCurrentX - touchStartX;
+            if (diff < -15) moveDir = -1;
+            else if (diff > 15) moveDir = 1;
+        }
 
-        player.x += player.vx;
+        // Мгновенное движение
+        player.x += moveDir * MOVE_SPEED;
 
-        // Телепортация (как в оригинале)
+        // Визуальный наклон (для красоты)
+        player.tilt += (moveDir * 0.2 - player.tilt) * 0.2;
+
+        // Телепортация
         if (player.x + player.width < 0) player.x = width;
         if (player.x > width) player.x = -player.width;
 
-        // 2. Гравитация
+        // Гравитация
         player.vy += GRAVITY;
         player.y += player.vy;
 
-        // 3. Коллизия с платформами (только при падении вниз)
+        // Коллизия
         if (player.vy > 0) {
             platforms.forEach(p => {
                 if (p.broken) return;
 
-                // Проверка пересечения по X
                 const xOverlap = player.x + player.width > p.x && player.x < p.x + p.width;
-                
-                // Проверка пересечения по Y (игрок падает на платформу)
+                // Немного увеличил допуск по Y для более отзывчивого прыжка
                 const yOverlap = player.y + player.height > p.y && 
-                                 player.y + player.height < p.y + p.height + player.vy + 10;
+                                 player.y + player.height < p.y + p.height + player.vy + 15;
 
                 if (xOverlap && yOverlap) {
-                    // Прыжок!
                     player.vy = JUMP_FORCE;
                     
-                    // Если платформа ломающаяся
+                    for(let i=0; i<6; i++) {
+                        particles.push({
+                            x: player.x + player.width/2,
+                            y: player.y + player.height,
+                            vx: (Math.random()-0.5)*4,
+                            vy: Math.random()*2 + 1,
+                            life: 1,
+                            color: p.type === 'breakable' ? '#ffaa00' : '#fff'
+                        });
+                    }
+
                     if (p.type === 'breakable') {
                         p.broken = true;
-                        p.breakTimer = 10; // Исчезнет через 10 кадров
+                        p.breakTimer = 15;
                     }
                 }
             });
         }
 
-        // 4. Обновление платформ (движение и ломание)
+        // Платформы
         platforms.forEach(p => {
             if (p.type === 'moving' && !p.broken) {
                 p.x += p.vx;
                 if (p.x <= 0 || p.x + p.width >= width) p.vx *= -1;
             }
-            if (p.broken) {
-                p.breakTimer--;
-            }
+            if (p.broken) p.breakTimer--;
         });
 
-        // Удаляем сломанные и упавшие платформы
         platforms = platforms.filter(p => !p.broken || p.breakTimer > 0);
-        platforms = platforms.filter(p => p.y < height + 200);
+        platforms = platforms.filter(p => p.y < height + 300);
 
-        // 5. Камера (следим за игроком, когда он выше середины)
+        // Камера
         if (player.y < height / 3) {
             const scroll = height / 3 - player.y;
             player.y += scroll;
             platforms.forEach(p => p.y += scroll);
+            stars.forEach(s => { s.y += scroll * 0.5; if(s.y > height) s.y = 0; });
             
-            // Счет
             score += Math.floor(scroll);
             document.getElementById('score').innerText = score;
         }
 
-        // 6. Генерация новых платформ
+        // Частицы
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let pt = particles[i];
+            pt.x += pt.vx;
+            pt.y += pt.vy;
+            pt.vy += 0.2;
+            pt.life -= 0.03;
+            if (pt.life <= 0) particles.splice(i, 1);
+        }
+
         generateNewPlatforms();
 
-        // 7. Проверка на проигрыш (упал ниже экрана)
-        if (player.y > height + 100) {
+        // Проигрыш
+        if (player.y > height + 150) {
             gameState = 'gameover';
             document.getElementById('final-score').innerText = score;
-            document.getElementById('game-over').style.display = 'block';
+            document.getElementById('game-over').style.display = 'flex';
         }
     }
 
-    // --- ОТРИСОВКА ---
     function draw() {
-        // Фон (градиент)
-        const gradient = ctx.createLinearGradient(0, 0, 0, height);
-        gradient.addColorStop(0, '#0a0a1a');
-        gradient.addColorStop(1, '#050510');
-        ctx.fillStyle = gradient;
+        ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, width, height);
 
-        // Звезды на фоне (статичные для оптимизации)
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        for (let i = 0; i < 30; i++) {
-            const sx = (i * 137) % width;
-            const sy = (i * 73 + cameraY * 0.1) % height;
-            ctx.fillRect(sx, sy, 2, 2);
-        }
+        stars.forEach(s => {
+            s.y -= 1;
+            if (s.y < 0) { s.y = height; s.x = Math.random() * width; }
+            ctx.fillStyle = `rgba(255, 255, 255, ${s.speed / 3})`;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
 
-        // Платформы
         platforms.forEach(p => {
             if (p.broken && p.breakTimer <= 0) return;
 
-            // Выбор цвета
+            let topColor, sideColor;
             if (p.type === 'normal') {
-                ctx.fillStyle = '#0f0'; // Зеленая
-                ctx.shadowColor = '#0f0';
+                topColor = '#fff'; sideColor = '#888';
             } else if (p.type === 'breakable') {
-                ctx.fillStyle = p.broken ? '#555' : '#f80'; // Оранжевая (ломается)
-                ctx.shadowColor = '#f80';
-            } else if (p.type === 'moving') {
-                ctx.fillStyle = '#0ff'; // Голубая (движется)
-                ctx.shadowColor = '#0ff';
+                topColor = p.broken ? '#f00' : '#ffaa00'; sideColor = '#b35900';
+            } else {
+                topColor = '#00ffff'; sideColor = '#008888';
             }
 
-            ctx.shadowBlur = 10;
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(p.x + 5, p.y + 5, p.width, p.height);
+
+            ctx.fillStyle = sideColor;
+            ctx.fillRect(p.x, p.y, p.width, p.height + 5);
+
+            ctx.fillStyle = topColor;
             ctx.fillRect(p.x, p.y, p.width, p.height);
-            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.fillRect(p.x, p.y, p.width, 3);
         });
 
-        // Игрок
+        particles.forEach(pt => {
+            ctx.globalAlpha = pt.life;
+            ctx.fillStyle = pt.color;
+            ctx.fillRect(pt.x, pt.y, 4, 4);
+        });
+        ctx.globalAlpha = 1;
+
+        // --- ИГРОК С НАКЛОНОМ ---
+        ctx.save();
+        ctx.translate(player.x + player.width/2, player.y + player.height/2);
+        ctx.rotate(player.tilt);
+        
+        // Тень
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(-player.width/2 + 5, -player.height/2 + 5, player.width, player.height);
+        
+        // Бок
+        ctx.fillStyle = '#888';
+        ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height + 4);
+
+        // Лицо
         ctx.fillStyle = player.color;
-        ctx.shadowColor = '#0ff';
-        ctx.shadowBlur = 20;
-        ctx.beginPath();
-        ctx.roundRect(player.x, player.y, player.width, player.height, 10);
-        ctx.fill();
+        ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
         
-        // Глаза игрока
-        ctx.fillStyle = '#fff';
-        ctx.shadowBlur = 0;
-        ctx.beginPath();
-        ctx.arc(player.x + 10, player.y + 10, 4, 0, Math.PI * 2);
-        ctx.arc(player.x + 20, player.y + 10, 4, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Зрачки (смотрят в сторону движения)
+        // Глаза (смотрят в сторону движения)
         ctx.fillStyle = '#000';
-        const eyeOffset = keys.left ? -2 : (keys.right ? 2 : 0);
-        ctx.beginPath();
-        ctx.arc(player.x + 10 + eyeOffset, player.y + 10, 2, 0, Math.PI * 2);
-        ctx.arc(player.x + 20 + eyeOffset, player.y + 10, 2, 0, Math.PI * 2);
-        ctx.fill();
+        const eyeOffset = player.tilt > 0 ? 3 : (player.tilt < 0 ? -3 : 0);
+        ctx.fillRect(-player.width/2 + 8 + eyeOffset, -player.height/2 + 10, 6, 8);
+        ctx.fillRect(-player.width/2 + 22 + eyeOffset, -player.height/2 + 10, 6, 8);
+
+        // Блик
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.fillRect(-player.width/2 + 2, -player.height/2 + 2, player.width - 4, 2);
+        
+        ctx.restore();
     }
 
-    // Полифилл для roundRect (если браузер старый)
-    if (!CanvasRenderingContext2D.prototype.roundRect) {
-        CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
-            if (w < 2 * r) r = w / 2;
-            if (h < 2 * r) r = h / 2;
-            this.beginPath();
-            this.moveTo(x + r, y);
-            this.arcTo(x + w, y, x + w, y + h, r);
-            this.arcTo(x + w, y + h, x, y + h, r);
-            this.arcTo(x, y + h, x, y, r);
-            this.arcTo(x, y, x + w, y, r);
-            this.closePath();
-            return this;
-        };
-    }
-
-    // --- ИГРОВОЙ ЦИКЛ ---
     function loop() {
         update();
         draw();
@@ -323,17 +386,20 @@
 
     function restartGame() {
         player.x = width / 2;
-        player.y = height - 100;
+        player.y = height - 150;
         player.vy = 0;
+        player.tilt = 0;
         score = 0;
         gameState = 'playing';
+        particles = [];
         document.getElementById('score').innerText = '0';
         document.getElementById('game-over').style.display = 'none';
         initPlatforms();
+        initStars();
     }
 
-    // --- СТАРТ ---
     initPlatforms();
+    initStars();
     loop();
 
 </script>
