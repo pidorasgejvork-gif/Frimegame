@@ -6,99 +6,281 @@
     <title>NEON JUMP</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
         body { 
             margin: 0; padding: 0; overflow: hidden; background: #000; 
             display: flex; justify-content: center; align-items: center; height: 100vh; 
             font-family: 'Outfit', sans-serif; touch-action: none; 
         }
-        canvas { display: block; }
+        canvas { display: block; width: 100%; height: 100%; }
         
-        #ui { 
-            position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
+        /* Игровой UI */
+        #score-container { 
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
             color: #fff; pointer-events: none; text-align: center; z-index: 10;
         }
-        #score-label {
-            font-size: 14px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;
-            opacity: 0.7; margin-bottom: -5px;
-        }
-        #score {
-            font-size: 42px; font-weight: 900; letter-spacing: -1px;
-            text-shadow: 0 0 20px rgba(255,255,255,0.5);
-        }
+        #score-label { font-size: 12px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; opacity: 0.6; }
+        #score { font-size: 48px; font-weight: 900; letter-spacing: -1px; text-shadow: 0 0 20px rgba(255,255,255,0.5); }
 
-        #game-over { 
+        /* Кнопки управления */
+        .top-btn {
+            position: absolute; top: 20px; z-index: 30; cursor: pointer;
+            width: 44px; height: 44px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; gap: 4px;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px; backdrop-filter: blur(5px); transition: 0.2s;
+        }
+        .top-btn:hover { background: rgba(255,255,255,0.2); }
+        .top-btn:active { transform: scale(0.95); }
+        
+        #pause-btn { left: 20px; }
+        #menu-btn { right: 20px; }
+
+        .pause-icon { width: 16px; height: 18px; border-left: 5px solid #fff; border-right: 5px solid #fff; }
+        .menu-icon { width: 20px; height: 2px; background: #fff; position: relative; }
+        .menu-icon::before, .menu-icon::after { content: ''; position: absolute; left: 0; width: 20px; height: 2px; background: #fff; }
+        .menu-icon::before { top: -6px; }
+        .menu-icon::after { top: 6px; }
+
+        /* Модальные окна */
+        .modal-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
-            display: none; flex-direction: column; justify-content: center; align-items: center;
-            color: #fff; z-index: 20;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
+            display: none; justify-content: center; align-items: center;
+            z-index: 40; padding: 20px;
         }
-        #game-over h1 { 
-            font-size: 60px; font-weight: 900; letter-spacing: -2px;
-            margin-bottom: 10px; text-shadow: 0 0 30px rgba(255,255,255,0.8);
+        .modal-overlay.open { display: flex; }
+
+        .modal-box {
+            background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+            border: 1px solid #333; border-radius: 28px;
+            width: 100%; max-width: 380px; padding: 35px; color: #fff;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8), 0 0 40px rgba(255,255,255,0.05);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative; text-align: center;
         }
-        #game-over p { 
-            font-size: 18px; font-weight: 900; color: #888; 
-            margin-bottom: 30px; letter-spacing: 2px;
+        @keyframes popIn { from { transform: scale(0.85) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+
+        .modal-title {
+            font-size: 32px; font-weight: 900; margin-bottom: 25px;
+            letter-spacing: -1px; text-transform: uppercase;
         }
-        #game-over .final-score {
-            font-size: 80px; font-weight: 900; color: #fff;
-            margin-bottom: 40px; text-shadow: 0 0 30px rgba(255,255,255,0.8);
+        
+        .close-btn {
+            position: absolute; top: 15px; right: 15px; width: 34px; height: 34px;
+            background: rgba(255,255,255,0.1); border: none; border-radius: 50%;
+            color: #fff; font-size: 18px; cursor: pointer; display: flex;
+            justify-content: center; align-items: center; transition: 0.2s;
         }
-        #game-over button { 
-            background: #fff; border: none; padding: 15px 40px; 
-            border-radius: 50px; font-family: 'Outfit', sans-serif;
-            font-weight: 900; font-size: 20px; cursor: pointer; 
-            color: #000; transition: all 0.3s ease; letter-spacing: 1px;
+        .close-btn:hover { background: rgba(255,255,255,0.2); transform: rotate(90deg); }
+
+        /* Настройки */
+        .setting-row { margin-bottom: 25px; text-align: left; }
+        .setting-label { 
+            display: flex; justify-content: space-between; 
+            font-size: 13px; font-weight: 700; margin-bottom: 10px; color: #aaa;
+            text-transform: uppercase; letter-spacing: 1px;
         }
-        #game-over button:hover { 
-            transform: scale(1.05); box-shadow: 0 0 30px rgba(255,255,255,0.5); 
+        
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; outline: none; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; background: #222; border-radius: 4px; cursor: pointer; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 22px; width: 22px; border-radius: 50%;
+            background: #fff; cursor: pointer; margin-top: -7px;
+            box-shadow: 0 0 15px rgba(255,255,255,0.4); transition: 0.1s;
         }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+
+        /* Вкладки */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab {
+            flex: 1; padding: 12px; background: #1a1a1a; border: 1px solid #333;
+            border-radius: 12px; text-align: center; font-weight: 700; font-size: 13px;
+            cursor: pointer; transition: 0.2s; color: #888;
+        }
+        .tab.active { background: #fff; color: #000; border-color: #fff; }
+        
+        .tab-content { 
+            display: none; text-align: center; padding: 40px 0; 
+            color: #555; font-size: 16px; font-weight: 700; letter-spacing: 2px;
+        }
+        .tab-content.active { display: block; }
+
+        /* Пауза */
+        .pause-btn {
+            width: 100%; padding: 18px; margin-bottom: 12px;
+            border-radius: 16px; border: none; font-family: 'Outfit', sans-serif;
+            font-size: 18px; font-weight: 900; cursor: pointer; transition: 0.2s;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-resume { background: #fff; color: #000; }
+        .btn-resume:hover { background: #ddd; transform: scale(1.02); }
+        .btn-restart { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid #333; }
+        .btn-restart:hover { background: rgba(255,255,255,0.1); transform: scale(1.02); }
+
+        /* Game Over */
+        .gameover-title { color: #ff3366; text-shadow: 0 0 30px rgba(255, 51, 102, 0.5); font-size: 38px; margin-bottom: 5px; }
+        .final-score-label { font-size: 14px; font-weight: 900; color: #666; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 5px; }
+        .final-score { font-size: 72px; font-weight: 900; color: #fff; line-height: 1; margin-bottom: 25px; text-shadow: 0 0 30px rgba(255,255,255,0.3); }
+        
+        .record-badge {
+            display: inline-block; background: rgba(255, 215, 0, 0.15); color: #ffd700;
+            padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 900;
+            letter-spacing: 1px; margin-bottom: 25px; border: 1px solid rgba(255, 215, 0, 0.3);
+            text-transform: uppercase; animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+
     </style>
 </head>
 <body>
 
     <canvas id="gameCanvas"></canvas>
     
-    <div id="ui">
+    <div id="score-container">
         <div id="score-label">Score</div>
         <div id="score">0</div>
     </div>
     
-    <div id="game-over">
-        <h1>GAME OVER</h1>
-        <p>FINAL SCORE</p>
-        <div class="final-score" id="final-score">0</div>
-        <button onclick="restartGame()">TRY AGAIN</button>
+    <div id="pause-btn" class="top-btn" onclick="togglePause()">
+        <div class="pause-icon"></div>
+    </div>
+    
+    <div id="menu-btn" class="top-btn" onclick="openMenu()">
+        <div class="menu-icon"></div>
+    </div>
+
+    <!-- Пауза -->
+    <div id="pause-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-title">PAUSED</div>
+            <button class="pause-btn btn-resume" onclick="togglePause()">RESUME</button>
+            <button class="pause-btn btn-restart" onclick="restartGame()">RESTART</button>
+        </div>
+    </div>
+
+    <!-- Меню -->
+    <div id="menu-modal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeMenu()">✕</button>
+            <div class="modal-title">SETTINGS</div>
+            
+            <div class="setting-row">
+                <div class="setting-label"><span>Sound Volume</span><span id="sound-val">50%</span></div>
+                <input type="range" id="sound-slider" min="0" max="100" value="50">
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-label"><span>Sensitivity</span><span id="sens-val">50%</span></div>
+                <input type="range" id="sens-slider" min="10" max="100" value="50">
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('chars', this)">Characters</div>
+                <div class="tab" onclick="switchTab('levels', this)">Locations</div>
+            </div>
+
+            <div id="tab-chars" class="tab-content active">COMING SOON</div>
+            <div id="tab-levels" class="tab-content">COMING SOON</div>
+        </div>
+    </div>
+
+    <!-- Game Over (Теперь в окошке) -->
+    <div id="game-over-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-title gameover-title">GAME OVER</div>
+            <div class="final-score-label">Your Score</div>
+            <div class="final-score" id="final-score">0</div>
+            <div id="record-badge" class="record-badge" style="display: none;">🏆 New Record!</div>
+            <button class="pause-btn btn-resume" onclick="restartGame()">TRY AGAIN</button>
+            <button class="pause-btn btn-restart" onclick="closeGameOver()">MENU</button>
+        </div>
     </div>
 
 <script>
+    // --- ЗВУК ---
+    let audioCtx = null;
+    let soundVolume = 0.5;
+    let sensitivity = 1.0;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function playSound(freq, type, duration) {
+        if (soundVolume === 0) return;
+        try {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(soundVolume * 0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        } catch(e) {}
+    }
+
+    // --- НАСТРОЙКИ ---
+    const soundSlider = document.getElementById('sound-slider');
+    const sensSlider = document.getElementById('sens-slider');
+    const soundVal = document.getElementById('sound-val');
+    const sensVal = document.getElementById('sens-val');
+
+    soundSlider.addEventListener('input', (e) => {
+        soundVolume = e.target.value / 100;
+        soundVal.innerText = e.target.value + '%';
+    });
+
+    sensSlider.addEventListener('input', (e) => {
+        sensitivity = 0.4 + (e.target.value / 100) * 0.8; 
+        sensVal.innerText = e.target.value + '%';
+    });
+
+    // --- КАНВАС ---
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-    if (width > 500) { width = 450; height = 800; } 
-    canvas.width = width;
-    canvas.height = height;
+    let width, height;
 
-    let gameState = 'playing';
+    function resizeCanvas() {
+        if (window.innerWidth > 600) {
+            width = 600;
+            height = Math.min(window.innerHeight, 900);
+        } else {
+            width = window.innerWidth;
+            height = window.innerHeight;
+        }
+        canvas.width = width;
+        canvas.height = height;
+    }
+    
+    resizeCanvas();
+    window.addEventListener('resize', () => {
+        resizeCanvas();
+        initPlatforms();
+    });
+
+    // --- ПЕРЕМЕННЫЕ ---
+    let gameState = 'playing'; // playing, paused, gameover
     let score = 0;
+    let highScore = parseInt(localStorage.getItem('neonjump_highscore') || '0');
+    
     let particles = [];
     let stars = [];
 
-    const GRAVITY = 0.5;
-    const JUMP_FORCE = -14;
+    const GRAVITY = 0.55;
+    const JUMP_FORCE = -15;
     
-    // --- НОВЫЕ НАСТРОЙКИ УПРАВЛЕНИЯ (БЕЗ ИНЕРЦИИ) ---
-    const MOVE_SPEED = 8; 
-
     const player = {
-        x: width / 2,
+        x: width / 2 - 20,
         y: height - 150,
-        vx: 0, // Оставляем для визуального наклона
+        vx: 0,
         vy: 0,
         width: 36,
         height: 36,
@@ -107,15 +289,13 @@
     };
 
     let platforms = [];
-    const PLATFORM_WIDTH = 80;
-    const PLATFORM_HEIGHT = 20;
-    const PLATFORM_GAP = 90;
+    let PLATFORM_WIDTH = 80;
+    let PLATFORM_HEIGHT = 20;
 
     let keys = { left: false, right: false };
     let touchStartX = null;
     let touchCurrentX = null;
 
-    // Клавиатура
     window.addEventListener('keydown', (e) => {
         if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
         if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
@@ -125,7 +305,6 @@
         if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
     });
 
-    // Тач
     window.addEventListener('touchstart', (e) => {
         touchStartX = e.touches[0].clientX;
         touchCurrentX = touchStartX;
@@ -141,36 +320,33 @@
         touchCurrentX = null;
     });
 
+    // --- ГЕНЕРАЦИЯ ---
     function createPlatform(y, type = 'normal') {
+        let x = Math.random() * (width - PLATFORM_WIDTH);
         return {
-            x: Math.random() * (width - PLATFORM_WIDTH),
-            y: y,
-            width: PLATFORM_WIDTH,
-            height: PLATFORM_HEIGHT,
-            type: type,
-            vx: type === 'moving' ? (Math.random() > 0.5 ? 3 : -3) : 0,
-            broken: false,
-            breakTimer: 0
+            x: x, y: y, width: PLATFORM_WIDTH, height: PLATFORM_HEIGHT,
+            type: type, vx: type === 'moving' ? (Math.random() > 0.5 ? 3 : -3) : 0,
+            broken: false, breakTimer: 0
         };
     }
 
     function initPlatforms() {
         platforms = [];
         platforms.push({
-            x: width / 2 - PLATFORM_WIDTH / 2,
-            y: height - 100,
-            width: PLATFORM_WIDTH,
-            height: PLATFORM_HEIGHT,
-            type: 'normal',
-            vx: 0, broken: false, breakTimer: 0
+            x: width / 2 - PLATFORM_WIDTH / 2, y: height - 100,
+            width: PLATFORM_WIDTH, height: PLATFORM_HEIGHT,
+            type: 'normal', vx: 0, broken: false, breakTimer: 0
         });
 
-        for (let y = height - 200; y > -height; y -= PLATFORM_GAP) {
+        let currentY = height - 200;
+        while (currentY > -height) {
             let type = 'normal';
             const r = Math.random();
             if (r < 0.25) type = 'breakable';
             else if (r < 0.5) type = 'moving';
-            platforms.push(createPlatform(y, type));
+            
+            platforms.push(createPlatform(currentY, type));
+            currentY -= (80 + Math.random() * 50);
         }
     }
 
@@ -183,84 +359,73 @@
             const r = Math.random();
             if (r < 0.25) type = 'breakable';
             else if (r < 0.5) type = 'moving';
-            platforms.push(createPlatform(minY - PLATFORM_GAP, type));
+            
+            const gap = 80 + Math.random() * 50;
+            platforms.push(createPlatform(minY - gap, type));
         }
     }
 
     function initStars() {
         stars = [];
-        for(let i=0; i<60; i++) {
+        for(let i=0; i<80; i++) {
             stars.push({
-                x: Math.random() * width,
-                y: Math.random() * height,
-                size: Math.random() * 2 + 1,
-                speed: Math.random() * 2 + 1
+                x: Math.random() * width, y: Math.random() * height,
+                size: Math.random() * 2.5 + 1, speed: Math.random() * 2 + 1
             });
         }
     }
 
+    // --- ЛОГИКА ---
     function update() {
         if (gameState !== 'playing') return;
 
-        // --- ИЗМЕНЕННОЕ УПРАВЛЕНИЕ (МГНОВЕННОЕ) ---
         let moveDir = 0;
         if (keys.left) moveDir = -1;
         else if (keys.right) moveDir = 1;
         
-        // Обработка тача (свайп работает как виртуальный джойстик)
         if (touchStartX !== null && touchCurrentX !== null) {
             const diff = touchCurrentX - touchStartX;
-            if (diff < -15) moveDir = -1;
-            else if (diff > 15) moveDir = 1;
+            if (diff < -15 / sensitivity) moveDir = -1;
+            else if (diff > 15 / sensitivity) moveDir = 1;
         }
 
-        // Мгновенное движение
-        player.x += moveDir * MOVE_SPEED;
-
-        // Визуальный наклон (для красоты)
+        const speed = 9 * sensitivity;
+        player.x += moveDir * speed;
         player.tilt += (moveDir * 0.2 - player.tilt) * 0.2;
 
-        // Телепортация
         if (player.x + player.width < 0) player.x = width;
         if (player.x > width) player.x = -player.width;
 
-        // Гравитация
         player.vy += GRAVITY;
         player.y += player.vy;
 
-        // Коллизия
         if (player.vy > 0) {
             platforms.forEach(p => {
                 if (p.broken) return;
-
                 const xOverlap = player.x + player.width > p.x && player.x < p.x + p.width;
-                // Немного увеличил допуск по Y для более отзывчивого прыжка
-                const yOverlap = player.y + player.height > p.y && 
-                                 player.y + player.height < p.y + p.height + player.vy + 15;
+                const yOverlap = player.y + player.height > p.y && player.y + player.height < p.y + p.height + player.vy + 15;
 
                 if (xOverlap && yOverlap) {
                     player.vy = JUMP_FORCE;
+                    playSound(300, 'sine', 0.1);
                     
                     for(let i=0; i<6; i++) {
                         particles.push({
-                            x: player.x + player.width/2,
-                            y: player.y + player.height,
-                            vx: (Math.random()-0.5)*4,
-                            vy: Math.random()*2 + 1,
-                            life: 1,
-                            color: p.type === 'breakable' ? '#ffaa00' : '#fff'
+                            x: player.x + player.width/2, y: player.y + player.height,
+                            vx: (Math.random()-0.5)*4, vy: Math.random()*2 + 1,
+                            life: 1, color: p.type === 'breakable' ? '#ffaa00' : '#fff'
                         });
                     }
 
                     if (p.type === 'breakable') {
                         p.broken = true;
                         p.breakTimer = 15;
+                        playSound(150, 'sawtooth', 0.2);
                     }
                 }
             });
         }
 
-        // Платформы
         platforms.forEach(p => {
             if (p.type === 'moving' && !p.broken) {
                 p.x += p.vx;
@@ -272,7 +437,6 @@
         platforms = platforms.filter(p => !p.broken || p.breakTimer > 0);
         platforms = platforms.filter(p => p.y < height + 300);
 
-        // Камера
         if (player.y < height / 3) {
             const scroll = height / 3 - player.y;
             player.y += scroll;
@@ -283,23 +447,31 @@
             document.getElementById('score').innerText = score;
         }
 
-        // Частицы
         for (let i = particles.length - 1; i >= 0; i--) {
             let pt = particles[i];
-            pt.x += pt.vx;
-            pt.y += pt.vy;
-            pt.vy += 0.2;
-            pt.life -= 0.03;
+            pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.2; pt.life -= 0.03;
             if (pt.life <= 0) particles.splice(i, 1);
         }
 
         generateNewPlatforms();
 
-        // Проигрыш
+        // --- ПРОИГРЫШ ---
         if (player.y > height + 150) {
             gameState = 'gameover';
+            
+            // Проверка рекорда
+            let isNewRecord = false;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('neonjump_highscore', highScore);
+                isNewRecord = true;
+            }
+
             document.getElementById('final-score').innerText = score;
-            document.getElementById('game-over').style.display = 'flex';
+            document.getElementById('record-badge').style.display = isNewRecord ? 'inline-block' : 'none';
+            document.getElementById('game-over-modal').classList.add('open');
+            
+            playSound(100, 'square', 0.5);
         }
     }
 
@@ -320,23 +492,16 @@
             if (p.broken && p.breakTimer <= 0) return;
 
             let topColor, sideColor;
-            if (p.type === 'normal') {
-                topColor = '#fff'; sideColor = '#888';
-            } else if (p.type === 'breakable') {
-                topColor = p.broken ? '#f00' : '#ffaa00'; sideColor = '#b35900';
-            } else {
-                topColor = '#00ffff'; sideColor = '#008888';
-            }
+            if (p.type === 'normal') { topColor = '#fff'; sideColor = '#888'; }
+            else if (p.type === 'breakable') { topColor = p.broken ? '#f00' : '#ffaa00'; sideColor = '#b35900'; }
+            else { topColor = '#00ffff'; sideColor = '#008888'; }
 
             ctx.fillStyle = 'rgba(0,0,0,0.5)';
             ctx.fillRect(p.x + 5, p.y + 5, p.width, p.height);
-
             ctx.fillStyle = sideColor;
             ctx.fillRect(p.x, p.y, p.width, p.height + 5);
-
             ctx.fillStyle = topColor;
             ctx.fillRect(p.x, p.y, p.width, p.height);
-
             ctx.fillStyle = 'rgba(255,255,255,0.5)';
             ctx.fillRect(p.x, p.y, p.width, 3);
         });
@@ -348,30 +513,22 @@
         });
         ctx.globalAlpha = 1;
 
-        // --- ИГРОК С НАКЛОНОМ ---
         ctx.save();
         ctx.translate(player.x + player.width/2, player.y + player.height/2);
         ctx.rotate(player.tilt);
         
-        // Тень
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.fillRect(-player.width/2 + 5, -player.height/2 + 5, player.width, player.height);
-        
-        // Бок
         ctx.fillStyle = '#888';
         ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height + 4);
-
-        // Лицо
         ctx.fillStyle = player.color;
         ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
         
-        // Глаза (смотрят в сторону движения)
         ctx.fillStyle = '#000';
         const eyeOffset = player.tilt > 0 ? 3 : (player.tilt < 0 ? -3 : 0);
         ctx.fillRect(-player.width/2 + 8 + eyeOffset, -player.height/2 + 10, 6, 8);
         ctx.fillRect(-player.width/2 + 22 + eyeOffset, -player.height/2 + 10, 6, 8);
 
-        // Блик
         ctx.fillStyle = 'rgba(255,255,255,0.8)';
         ctx.fillRect(-player.width/2 + 2, -player.height/2 + 2, player.width - 4, 2);
         
@@ -379,13 +536,46 @@
     }
 
     function loop() {
-        update();
+        if (gameState === 'playing') update();
         draw();
         requestAnimationFrame(loop);
     }
 
+    // --- ИНТЕРФЕЙС ---
+    function togglePause() {
+        if (gameState === 'gameover') return;
+        if (gameState === 'playing') {
+            gameState = 'paused';
+            document.getElementById('pause-modal').classList.add('open');
+        } else if (gameState === 'paused') {
+            gameState = 'playing';
+            document.getElementById('pause-modal').classList.remove('open');
+        }
+    }
+
+    function openMenu() {
+        if (gameState === 'playing') togglePause();
+        document.getElementById('menu-modal').classList.add('open');
+    }
+
+    function closeMenu() {
+        document.getElementById('menu-modal').classList.remove('open');
+    }
+
+    function closeGameOver() {
+        document.getElementById('game-over-modal').classList.remove('open');
+        restartGame(); // Сбрасываем игру, чтобы можно было начать заново из меню
+    }
+
+    function switchTab(tabName, btn) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + tabName).classList.add('active');
+    }
+
     function restartGame() {
-        player.x = width / 2;
+        player.x = width / 2 - 20;
         player.y = height - 150;
         player.vy = 0;
         player.tilt = 0;
@@ -393,15 +583,18 @@
         gameState = 'playing';
         particles = [];
         document.getElementById('score').innerText = '0';
-        document.getElementById('game-over').style.display = 'none';
+        document.getElementById('game-over-modal').classList.remove('open');
+        document.getElementById('pause-modal').classList.remove('open');
+        document.getElementById('menu-modal').classList.remove('open');
         initPlatforms();
         initStars();
     }
 
+    // Старт
     initPlatforms();
     initStars();
     loop();
 
 </script>
 </body>
-</html>
+    </html>
