@@ -18,11 +18,22 @@
         
         /* Игровой UI */
         #score-container { 
-            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
             color: #fff; pointer-events: none; text-align: center; z-index: 10;
+            display: flex; flex-direction: column; align-items: center;
         }
-        #score-label { font-size: 12px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; opacity: 0.6; }
-        #score { font-size: 48px; font-weight: 900; letter-spacing: -1px; text-shadow: 0 0 20px rgba(255,255,255,0.5); }
+        #score-label { font-size: 10px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; opacity: 0.6; margin-bottom: -2px; }
+        #score { font-size: 48px; font-weight: 900; letter-spacing: -1px; text-shadow: 0 0 20px rgba(255,255,255,0.5); line-height: 1; }
+        
+        /* Рекорд под счетчиком */
+        #highscore-container {
+            display: flex; align-items: center; gap: 5px; margin-top: 4px;
+            font-size: 14px; font-weight: 900; color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.4);
+            letter-spacing: 1px; background: rgba(0,0,0,0.4);
+            padding: 3px 10px; border-radius: 10px; border: 1px solid rgba(255, 204, 0, 0.2);
+        }
+        #highscore-container svg { width: 14px; height: 14px; fill: #ffcc00; }
 
         /* Кнопки управления */
         .top-btn {
@@ -142,6 +153,10 @@
     <div id="score-container">
         <div id="score-label">Score</div>
         <div id="score">0</div>
+        <div id="highscore-container">
+            <svg viewBox="0 0 24 24"><path d="M19 3h-2V1H7v2H5c-1.1 0-2 .9-2 2v3c0 2.4 1.7 4.4 4 4.9V15c0 1.1.9 2 2 2h2v2H8v2h8v-2h-3v-2h2c1.1 0 2-.9 2-2v-2.1c2.3-.5 4-2.5 4-4.9V5c0-1.1-.9-2-2-2zM5 8V5h2v3c0 1-.4 1.9-1 2.5C5.4 9.9 5 9 5 8zm14 0c0 1-.4 1.9-1 2.5-.6-.6-1-1.5-1-2.5V5h2v3z"/></svg>
+            <span id="highscore">0</span>
+        </div>
     </div>
     
     <div id="pause-btn" class="top-btn" onclick="togglePause()">
@@ -158,6 +173,7 @@
             <div class="modal-title">PAUSED</div>
             <button class="pause-btn btn-resume" onclick="togglePause()">RESUME</button>
             <button class="pause-btn btn-restart" onclick="restartGame()">RESTART</button>
+            <button class="pause-btn btn-restart" onclick="goToMenu()">MAIN MENU</button>
         </div>
     </div>
 
@@ -187,7 +203,7 @@
         </div>
     </div>
 
-    <!-- Game Over (Теперь в окошке) -->
+    <!-- Game Over -->
     <div id="game-over-modal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-title gameover-title">GAME OVER</div>
@@ -195,7 +211,7 @@
             <div class="final-score" id="final-score">0</div>
             <div id="record-badge" class="record-badge" style="display: none;">🏆 New Record!</div>
             <button class="pause-btn btn-resume" onclick="restartGame()">TRY AGAIN</button>
-            <button class="pause-btn btn-restart" onclick="closeGameOver()">MENU</button>
+            <button class="pause-btn btn-restart" onclick="goToMenu()">MAIN MENU</button>
         </div>
     </div>
 
@@ -267,7 +283,7 @@
     });
 
     // --- ПЕРЕМЕННЫЕ ---
-    let gameState = 'playing'; // playing, paused, gameover
+    let gameState = 'playing'; // playing, paused, gameover, menu
     let score = 0;
     let highScore = parseInt(localStorage.getItem('neonjump_highscore') || '0');
     
@@ -295,6 +311,9 @@
     let keys = { left: false, right: false };
     let touchStartX = null;
     let touchCurrentX = null;
+
+    // Инициализация рекорда в UI
+    document.getElementById('highscore').innerText = highScore;
 
     window.addEventListener('keydown', (e) => {
         if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
@@ -464,6 +483,7 @@
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('neonjump_highscore', highScore);
+                document.getElementById('highscore').innerText = highScore;
                 isNewRecord = true;
             }
 
@@ -562,9 +582,22 @@
         document.getElementById('menu-modal').classList.remove('open');
     }
 
-    function closeGameOver() {
+    // ФУНКЦИЯ ДЛЯ ПЕРЕХОДА В ГЛАВНОЕ МЕНЮ ИЗ ИГРЫ ИЛИ GAME OVER
+    function goToMenu() {
+        gameState = 'menu'; // Меняем состояние, чтобы игра не обновлялась
         document.getElementById('game-over-modal').classList.remove('open');
-        restartGame(); // Сбрасываем игру, чтобы можно было начать заново из меню
+        document.getElementById('pause-modal').classList.remove('open');
+        
+        // Сбрасываем игровые параметры (но не трогаем рекорд)
+        player.x = width / 2 - 20;
+        player.y = height - 150;
+        player.vy = 0;
+        player.tilt = 0;
+        score = 0;
+        document.getElementById('score').innerText = '0';
+        
+        // Открываем меню настроек как "главное меню"
+        document.getElementById('menu-modal').classList.add('open');
     }
 
     function switchTab(tabName, btn) {
@@ -575,12 +608,12 @@
     }
 
     function restartGame() {
+        gameState = 'playing';
         player.x = width / 2 - 20;
         player.y = height - 150;
         player.vy = 0;
         player.tilt = 0;
         score = 0;
-        gameState = 'playing';
         particles = [];
         document.getElementById('score').innerText = '0';
         document.getElementById('game-over-modal').classList.remove('open');
