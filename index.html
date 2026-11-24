@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON JUMP</title>
+    <title>NEON JUMP: Multiverse</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
@@ -17,23 +17,23 @@
         canvas { display: block; width: 100%; height: 100%; }
         
         /* Игровой UI */
-        #score-container { 
+        #top-ui { 
             position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
             color: #fff; pointer-events: none; text-align: center; z-index: 10;
             display: flex; flex-direction: column; align-items: center;
         }
         #score-label { font-size: 10px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; opacity: 0.6; margin-bottom: -2px; }
-        #score { font-size: 48px; font-weight: 900; letter-spacing: -1px; text-shadow: 0 0 20px rgba(255,255,255,0.5); line-height: 1; }
+        #score { font-size: 42px; font-weight: 900; letter-spacing: -1px; text-shadow: 0 0 20px rgba(255,255,255,0.5); line-height: 1; }
         
-        /* Рекорд под счетчиком */
-        #highscore-container {
-            display: flex; align-items: center; gap: 5px; margin-top: 4px;
-            font-size: 14px; font-weight: 900; color: #ffcc00;
-            text-shadow: 0 0 10px rgba(255, 204, 0, 0.4);
-            letter-spacing: 1px; background: rgba(0,0,0,0.4);
-            padding: 3px 10px; border-radius: 10px; border: 1px solid rgba(255, 204, 0, 0.2);
+        .stats-row { display: flex; gap: 10px; margin-top: 5px; }
+        .stat-badge {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 13px; font-weight: 900; background: rgba(0,0,0,0.5);
+            padding: 4px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
         }
-        #highscore-container svg { width: 14px; height: 14px; fill: #ffcc00; }
+        .stat-badge.highscore { color: #ffcc00; text-shadow: 0 0 10px rgba(255, 204, 0, 0.4); border-color: rgba(255, 204, 0, 0.3); }
+        .stat-badge.coins { color: #00ff88; text-shadow: 0 0 10px rgba(0, 255, 136, 0.4); border-color: rgba(0, 255, 136, 0.3); }
+        .stat-badge svg { width: 14px; height: 14px; fill: currentColor; }
 
         /* Кнопки управления */
         .top-btn {
@@ -60,112 +60,115 @@
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
             display: none; justify-content: center; align-items: center;
-            z-index: 40; padding: 20px;
+            z-index: 40; padding: 15px;
         }
         .modal-overlay.open { display: flex; }
 
         .modal-box {
             background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
-            border: 1px solid #333; border-radius: 28px;
-            width: 100%; max-width: 380px; padding: 35px; color: #fff;
+            border: 1px solid #333; border-radius: 24px;
+            width: 100%; max-width: 420px; padding: 25px; color: #fff;
             box-shadow: 0 30px 60px rgba(0,0,0,0.8), 0 0 40px rgba(255,255,255,0.05);
             animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative; text-align: center;
+            max-height: 90vh; overflow-y: auto;
         }
         @keyframes popIn { from { transform: scale(0.85) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
 
-        .modal-title {
-            font-size: 32px; font-weight: 900; margin-bottom: 25px;
-            letter-spacing: -1px; text-transform: uppercase;
-        }
+        .modal-title { font-size: 24px; font-weight: 900; margin-bottom: 15px; letter-spacing: -1px; text-transform: uppercase; }
         
         .close-btn {
-            position: absolute; top: 15px; right: 15px; width: 34px; height: 34px;
+            position: absolute; top: 15px; right: 15px; width: 30px; height: 30px;
             background: rgba(255,255,255,0.1); border: none; border-radius: 50%;
-            color: #fff; font-size: 18px; cursor: pointer; display: flex;
-            justify-content: center; align-items: center; transition: 0.2s;
+            color: #fff; font-size: 16px; cursor: pointer; display: flex;
+            justify-content: center; align-items: center; transition: 0.2s; z-index: 2;
         }
         .close-btn:hover { background: rgba(255,255,255,0.2); transform: rotate(90deg); }
 
-        /* Настройки */
-        .setting-row { margin-bottom: 25px; text-align: left; }
-        .setting-label { 
-            display: flex; justify-content: space-between; 
-            font-size: 13px; font-weight: 700; margin-bottom: 10px; color: #aaa;
-            text-transform: uppercase; letter-spacing: 1px;
-        }
-        
-        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; outline: none; }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; background: #222; border-radius: 4px; cursor: pointer; }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 22px; width: 22px; border-radius: 50%;
-            background: #fff; cursor: pointer; margin-top: -7px;
-            box-shadow: 0 0 15px rgba(255,255,255,0.4); transition: 0.1s;
-        }
-        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
-
         /* Вкладки */
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; }
         .tab {
-            flex: 1; padding: 12px; background: #1a1a1a; border: 1px solid #333;
-            border-radius: 12px; text-align: center; font-weight: 700; font-size: 13px;
+            flex: 1; padding: 10px; background: #1a1a1a; border: 1px solid #333;
+            border-radius: 10px; text-align: center; font-weight: 700; font-size: 12px;
             cursor: pointer; transition: 0.2s; color: #888;
         }
         .tab.active { background: #fff; color: #000; border-color: #fff; }
         
-        .tab-content { 
-            display: none; text-align: center; padding: 40px 0; 
-            color: #555; font-size: 16px; font-weight: 700; letter-spacing: 2px;
-        }
+        .tab-content { display: none; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Пауза */
-        .pause-btn {
-            width: 100%; padding: 18px; margin-bottom: 12px;
-            border-radius: 16px; border: none; font-family: 'Outfit', sans-serif;
-            font-size: 18px; font-weight: 900; cursor: pointer; transition: 0.2s;
-            text-transform: uppercase; letter-spacing: 1px;
+        /* Магазин */
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .shop-item {
+            background: #1a1a1a; border: 1px solid #333; border-radius: 14px;
+            padding: 12px; display: flex; flex-direction: column; align-items: center;
+            transition: 0.2s;
         }
+        .shop-item.owned { border-color: #00ff88; background: rgba(0, 255, 136, 0.05); }
+        .shop-item.active-item { border-color: #00ffff; background: rgba(0, 255, 255, 0.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.2); }
+        .shop-preview { width: 50px; height: 50px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: center; align-items: center; font-size: 24px; }
+        .shop-name { font-size: 12px; font-weight: 700; margin-bottom: 5px; }
+        .shop-btn {
+            width: 100%; padding: 8px; border-radius: 8px; border: none;
+            font-family: 'Outfit'; font-weight: 900; font-size: 11px; cursor: pointer;
+            background: #333; color: #fff; transition: 0.2s;
+        }
+        .shop-btn:hover { background: #444; }
+        .shop-btn.buy { background: #ffcc00; color: #000; }
+        .shop-btn.buy:hover { background: #ffdd44; }
+        .shop-btn.equip { background: #00ffff; color: #000; }
+
+        /* Настройки */
+        .setting-row { margin-bottom: 15px; text-align: left; }
+        .setting-label { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-bottom: 5px; color: #aaa; text-transform: uppercase; }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; outline: none; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; background: #222; border-radius: 3px; cursor: pointer; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%;
+            background: #fff; cursor: pointer; margin-top: -6px; box-shadow: 0 0 10px rgba(255,255,255,0.4);
+        }
+
+        /* Кнопки меню */
+        .pause-btn { width: 100%; padding: 15px; margin-bottom: 8px; border-radius: 12px; border: none; font-family: 'Outfit'; font-size: 16px; font-weight: 900; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
         .btn-resume { background: #fff; color: #000; }
         .btn-resume:hover { background: #ddd; transform: scale(1.02); }
         .btn-restart { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid #333; }
         .btn-restart:hover { background: rgba(255,255,255,0.1); transform: scale(1.02); }
 
         /* Game Over */
-        .gameover-title { color: #ff3366; text-shadow: 0 0 30px rgba(255, 51, 102, 0.5); font-size: 38px; margin-bottom: 5px; }
-        .final-score-label { font-size: 14px; font-weight: 900; color: #666; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 5px; }
-        .final-score { font-size: 72px; font-weight: 900; color: #fff; line-height: 1; margin-bottom: 25px; text-shadow: 0 0 30px rgba(255,255,255,0.3); }
-        
+        .gameover-title { color: #ff3366; text-shadow: 0 0 30px rgba(255, 51, 102, 0.5); font-size: 32px; margin-bottom: 5px; }
+        .final-score { font-size: 60px; font-weight: 900; color: #fff; line-height: 1; margin-bottom: 20px; text-shadow: 0 0 30px rgba(255,255,255,0.3); }
         .record-badge {
             display: inline-block; background: rgba(255, 215, 0, 0.15); color: #ffd700;
-            padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 900;
-            letter-spacing: 1px; margin-bottom: 25px; border: 1px solid rgba(255, 215, 0, 0.3);
+            padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 900;
+            letter-spacing: 1px; margin-bottom: 15px; border: 1px solid rgba(255, 215, 0, 0.3);
             text-transform: uppercase; animation: pulse 2s infinite;
         }
         @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
-
     </style>
 </head>
 <body>
 
     <canvas id="gameCanvas"></canvas>
     
-    <div id="score-container">
+    <div id="top-ui">
         <div id="score-label">Score</div>
         <div id="score">0</div>
-        <div id="highscore-container">
-            <svg viewBox="0 0 24 24"><path d="M19 3h-2V1H7v2H5c-1.1 0-2 .9-2 2v3c0 2.4 1.7 4.4 4 4.9V15c0 1.1.9 2 2 2h2v2H8v2h8v-2h-3v-2h2c1.1 0 2-.9 2-2v-2.1c2.3-.5 4-2.5 4-4.9V5c0-1.1-.9-2-2-2zM5 8V5h2v3c0 1-.4 1.9-1 2.5C5.4 9.9 5 9 5 8zm14 0c0 1-.4 1.9-1 2.5-.6-.6-1-1.5-1-2.5V5h2v3z"/></svg>
-            <span id="highscore">0</span>
+        <div class="stats-row">
+            <div class="stat-badge highscore">
+                <svg viewBox="0 0 24 24"><path d="M19 3h-2V1H7v2H5c-1.1 0-2 .9-2 2v3c0 2.4 1.7 4.4 4 4.9V15c0 1.1.9 2 2 2h2v2H8v2h8v-2h-3v-2h2c1.1 0 2-.9 2-2v-2.1c2.3-.5 4-2.5 4-4.9V5c0-1.1-.9-2-2-2zM5 8V5h2v3c0 1-.4 1.9-1 2.5C5.4 9.9 5 9 5 8zm14 0c0 1-.4 1.9-1 2.5-.6-.6-1-1.5-1-2.5V5h2v3z"/></svg>
+                <span id="highscore">0</span>
+            </div>
+            <div class="stat-badge coins">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+                <span id="coins-display">0</span>
+            </div>
         </div>
     </div>
     
-    <div id="pause-btn" class="top-btn" onclick="togglePause()">
-        <div class="pause-icon"></div>
-    </div>
-    
-    <div id="menu-btn" class="top-btn" onclick="openMenu()">
-        <div class="menu-icon"></div>
-    </div>
+    <div id="pause-btn" class="top-btn" onclick="togglePause()"><div class="pause-icon"></div></div>
+    <div id="menu-btn" class="top-btn" onclick="openMenu()"><div class="menu-icon"></div></div>
 
     <!-- Пауза -->
     <div id="pause-modal" class="modal-overlay">
@@ -177,29 +180,39 @@
         </div>
     </div>
 
-    <!-- Меню -->
+    <!-- Меню / Магазин -->
     <div id="menu-modal" class="modal-overlay">
         <div class="modal-box">
             <button class="close-btn" onclick="closeMenu()">✕</button>
-            <div class="modal-title">SETTINGS</div>
+            <div class="modal-title">SHOP & SETTINGS</div>
             
-            <div class="setting-row">
-                <div class="setting-label"><span>Sound Volume</span><span id="sound-val">50%</span></div>
-                <input type="range" id="sound-slider" min="0" max="100" value="50">
-            </div>
-
-            <div class="setting-row">
-                <div class="setting-label"><span>Sensitivity</span><span id="sens-val">50%</span></div>
-                <input type="range" id="sens-slider" min="10" max="100" value="50">
-            </div>
-
             <div class="tabs">
                 <div class="tab active" onclick="switchTab('chars', this)">Characters</div>
                 <div class="tab" onclick="switchTab('levels', this)">Locations</div>
+                <div class="tab" onclick="switchTab('settings', this)">Settings</div>
             </div>
 
-            <div id="tab-chars" class="tab-content active">COMING SOON</div>
-            <div id="tab-levels" class="tab-content">COMING SOON</div>
+            <!-- Персонажи -->
+            <div id="tab-chars" class="tab-content active">
+                <div class="shop-grid" id="chars-grid"></div>
+            </div>
+
+            <!-- Локации -->
+            <div id="tab-levels" class="tab-content">
+                <div class="shop-grid" id="levels-grid"></div>
+            </div>
+
+            <!-- Настройки -->
+            <div id="tab-settings" class="tab-content">
+                <div class="setting-row">
+                    <div class="setting-label"><span>Sound Volume</span><span id="sound-val">50%</span></div>
+                    <input type="range" id="sound-slider" min="0" max="100" value="50">
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label"><span>Sensitivity</span><span id="sens-val">50%</span></div>
+                    <input type="range" id="sens-slider" min="10" max="100" value="50">
+                </div>
+            </div>
         </div>
     </div>
 
@@ -207,11 +220,10 @@
     <div id="game-over-modal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-title gameover-title">GAME OVER</div>
-            <div class="final-score-label">Your Score</div>
             <div class="final-score" id="final-score">0</div>
             <div id="record-badge" class="record-badge" style="display: none;">🏆 New Record!</div>
             <button class="pause-btn btn-resume" onclick="restartGame()">TRY AGAIN</button>
-            <button class="pause-btn btn-restart" onclick="goToMenu()">MAIN MENU</button>
+            <button class="pause-btn btn-restart" onclick="goToMenu()">SHOP</button>
         </div>
     </div>
 
@@ -221,142 +233,199 @@
     let soundVolume = 0.5;
     let sensitivity = 1.0;
 
-    function initAudio() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-
+    function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
     function playSound(freq, type, duration) {
         if (soundVolume === 0) return;
         try {
             initAudio();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
             gain.gain.setValueAtTime(soundVolume * 0.1, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
         } catch(e) {}
     }
 
-    // --- НАСТРОЙКИ ---
-    const soundSlider = document.getElementById('sound-slider');
-    const sensSlider = document.getElementById('sens-slider');
-    const soundVal = document.getElementById('sound-val');
-    const sensVal = document.getElementById('sens-val');
+    // --- ДАННЫЕ МАГАЗИНА ---
+    const characters = [
+        { id: 'default', name: 'Classic', price: 0, color: '#ffffff', glow: '#ffffff' },
+        { id: 'ninja', name: 'Cyber Ninja', price: 50, color: '#00ffff', glow: '#00ffff' },
+        { id: 'gold', name: 'Golden', price: 150, color: '#ffcc00', glow: '#ffcc00' },
+        { id: 'ghost', name: 'Ghost', price: 300, color: '#ff00ff', glow: '#ff00ff' }
+    ];
 
-    soundSlider.addEventListener('input', (e) => {
-        soundVolume = e.target.value / 100;
-        soundVal.innerText = e.target.value + '%';
-    });
+    const locations = [
+        { id: 'space', name: 'Neon Space', price: 0, bg1: '#050510', bg2: '#000000', nebula: ['rgba(0,255,255,0.05)', 'rgba(255,0,255,0.05)'] },
+        { id: 'volcano', name: 'Volcano', price: 100, bg1: '#1a0505', bg2: '#000000', nebula: ['rgba(255,50,0,0.1)', 'rgba(255,150,0,0.05)'] },
+        { id: 'ice', name: 'Ice Cave', price: 200, bg1: '#05101a', bg2: '#000000', nebula: ['rgba(0,100,255,0.1)', 'rgba(0,255,255,0.05)'] }
+    ];
 
-    sensSlider.addEventListener('input', (e) => {
-        sensitivity = 0.4 + (e.target.value / 100) * 0.8; 
-        sensVal.innerText = e.target.value + '%';
-    });
+    // Загрузка прогресса
+    let ownedChars = JSON.parse(localStorage.getItem('nj_ownedChars') || '["default"]');
+    let ownedLocs = JSON.parse(localStorage.getItem('nj_ownedLocs') || '["space"]');
+    let currentChar = localStorage.getItem('nj_currentChar') || 'default';
+    let currentLoc = localStorage.getItem('nj_currentLoc') || 'space';
+    let coins = parseInt(localStorage.getItem('nj_coins') || '0');
+    let highScore = parseInt(localStorage.getItem('nj_highscore') || '0');
+
+    document.getElementById('coins-display').innerText = coins;
+    document.getElementById('highscore').innerText = highScore;
+
+    // --- UI МАГАЗИНА ---
+    function renderShop() {
+        // Персонажи
+        const charsGrid = document.getElementById('chars-grid');
+        charsGrid.innerHTML = characters.map(c => {
+            const isOwned = ownedChars.includes(c.id);
+            const isActive = currentChar === c.id;
+            return `
+                <div class="shop-item ${isOwned ? 'owned' : ''} ${isActive ? 'active-item' : ''}">
+                    <div class="shop-preview" style="background: ${c.color}; box-shadow: 0 0 15px ${c.glow};">${isActive ? '👤' : ''}</div>
+                    <div class="shop-name">${c.name}</div>
+                    ${isOwned 
+                        ? (isActive ? `<button class="shop-btn equip" disabled>EQUIPPED</button>` : `<button class="shop-btn equip" onclick="equipChar('${c.id}')">EQUIP</button>`)
+                        : `<button class="shop-btn buy" onclick="buyChar('${c.id}', ${c.price})">${c.price} 🪙</button>`
+                    }
+                </div>
+            `;
+        }).join('');
+
+        // Локации
+        const locsGrid = document.getElementById('levels-grid');
+        locsGrid.innerHTML = locations.map(l => {
+            const isOwned = ownedLocs.includes(l.id);
+            const isActive = currentLoc === l.id;
+            return `
+                <div class="shop-item ${isOwned ? 'owned' : ''} ${isActive ? 'active-item' : ''}">
+                    <div class="shop-preview" style="background: linear-gradient(135deg, ${l.bg1}, ${l.bg2}); border: 1px solid ${l.nebula[0]};"></div>
+                    <div class="shop-name">${l.name}</div>
+                    ${isOwned 
+                        ? (isActive ? `<button class="shop-btn equip" disabled>EQUIPPED</button>` : `<button class="shop-btn equip" onclick="equipLoc('${l.id}')">EQUIP</button>`)
+                        : `<button class="shop-btn buy" onclick="buyLoc('${l.id}', ${l.price})">${l.price} 🪙</button>`
+                    }
+                </div>
+            `;
+        }).join('');
+    }
+
+    function buyChar(id, price) {
+        if (coins >= price) {
+            coins -= price;
+            ownedChars.push(id);
+            localStorage.setItem('nj_coins', coins);
+            localStorage.setItem('nj_ownedChars', JSON.stringify(ownedChars));
+            document.getElementById('coins-display').innerText = coins;
+            playSound(600, 'sine', 0.1);
+            renderShop();
+        } else {
+            playSound(100, 'square', 0.2);
+        }
+    }
+
+    function equipChar(id) {
+        currentChar = id;
+        localStorage.setItem('nj_currentChar', id);
+        updatePlayerColor();
+        renderShop();
+    }
+
+    function buyLoc(id, price) {
+        if (coins >= price) {
+            coins -= price;
+            ownedLocs.push(id);
+            localStorage.setItem('nj_coins', coins);
+            localStorage.setItem('nj_ownedLocs', JSON.stringify(ownedLocs));
+            document.getElementById('coins-display').innerText = coins;
+            playSound(600, 'sine', 0.1);
+            renderShop();
+        } else {
+            playSound(100, 'square', 0.2);
+        }
+    }
+
+    function equipLoc(id) {
+        currentLoc = id;
+        localStorage.setItem('nj_currentLoc', id);
+        renderShop();
+    }
+
+    function updatePlayerColor() {
+        const char = characters.find(c => c.id === currentChar);
+        player.color = char.color;
+        player.glow = char.glow;
+    }
+
+    function switchTab(tabName, btn) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + tabName).classList.add('active');
+    }
 
     // --- КАНВАС ---
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-
     let width, height;
 
     function resizeCanvas() {
-        if (window.innerWidth > 600) {
-            width = 600;
-            height = Math.min(window.innerHeight, 900);
-        } else {
-            width = window.innerWidth;
-            height = window.innerHeight;
-        }
-        canvas.width = width;
-        canvas.height = height;
+        if (window.innerWidth > 600) { width = 600; height = Math.min(window.innerHeight, 900); } 
+        else { width = window.innerWidth; height = window.innerHeight; }
+        canvas.width = width; canvas.height = height;
     }
     
     resizeCanvas();
-    window.addEventListener('resize', () => {
-        resizeCanvas();
-        initPlatforms();
-    });
+    window.addEventListener('resize', () => { resizeCanvas(); initPlatforms(); });
 
-    // --- ПЕРЕМЕННЫЕ ---
-    let gameState = 'playing'; // playing, paused, gameover, menu
+    // --- ИГРОВЫЕ ПЕРЕМЕННЫЕ ---
+    let gameState = 'playing';
     let prevGameState = 'playing'; 
     let score = 0;
-    let highScore = parseInt(localStorage.getItem('neonjump_highscore') || '0');
-    
     let particles = [];
     let stars = [];
-    let nebulas = []; // Для фона
+    let nebulas = [];
+    let springs = [];
+    let gameCoins = [];
 
     const GRAVITY = 0.55;
     const JUMP_FORCE = -15;
-    
+    const SPRING_FORCE = -25;
+
     const player = {
-        x: width / 2 - 20,
-        y: height - 150,
-        vx: 0,
-        vy: 0,
-        width: 36,
-        height: 36,
-        color: '#fff',
-        tilt: 0
+        x: width / 2 - 20, y: height - 150, vx: 0, vy: 0,
+        width: 36, height: 36, color: '#ffffff', glow: '#ffffff', tilt: 0
     };
 
     let platforms = [];
     let PLATFORM_WIDTH = 80;
     let PLATFORM_HEIGHT = 20;
-
     let keys = { left: false, right: false };
-    let touchStartX = null;
-    let touchCurrentX = null;
+    let touchStartX = null, touchCurrentX = null;
 
-    document.getElementById('highscore').innerText = highScore;
-
-    window.addEventListener('keydown', (e) => {
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
-    });
-    window.addEventListener('keyup', (e) => {
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
-    });
-
-    window.addEventListener('touchstart', (e) => {
-        touchStartX = e.touches[0].clientX;
-        touchCurrentX = touchStartX;
-    }, {passive: true});
-    
-    window.addEventListener('touchmove', (e) => {
-        if (touchStartX === null) return;
-        touchCurrentX = e.touches[0].clientX;
-    }, {passive: true});
-
-    window.addEventListener('touchend', () => {
-        touchStartX = null;
-        touchCurrentX = null;
-    });
-
-    // --- ГЕНЕРАЦИЯ ---
+    // --- ИНИЦИАЛИЗАЦИЯ ---
     function createPlatform(y, type = 'normal') {
         let x = Math.random() * (width - PLATFORM_WIDTH);
-        return {
-            x: x, y: y, width: PLATFORM_WIDTH, height: PLATFORM_HEIGHT,
-            type: type, vx: type === 'moving' ? (Math.random() > 0.5 ? 3 : -3) : 0,
-            broken: false, breakTimer: 0
+        let platform = {
+            x, y, width: PLATFORM_WIDTH, height: PLATFORM_HEIGHT, type,
+            vx: type === 'moving' ? (Math.random() > 0.5 ? 3 : -3) : 0,
+            broken: false, breakTimer: 0, hasSpring: false, hasCoin: false
         };
+
+        // Спавн айтемов (только если счет > 5000)
+        if (score > 5000) {
+            const r = Math.random();
+            if (r < 0.15 && type !== 'breakable') platform.hasSpring = true;
+            else if (r < 0.3) platform.hasCoin = true;
+        }
+
+        return platform;
     }
 
     function initPlatforms() {
         platforms = [];
-        platforms.push({
-            x: width / 2 - PLATFORM_WIDTH / 2, y: height - 100,
-            width: PLATFORM_WIDTH, height: PLATFORM_HEIGHT,
-            type: 'normal', vx: 0, broken: false, breakTimer: 0
-        });
+        springs = [];
+        gameCoins = [];
+        platforms.push({ x: width / 2 - PLATFORM_WIDTH / 2, y: height - 100, width: PLATFORM_WIDTH, height: PLATFORM_HEIGHT, type: 'normal', vx: 0, broken: false, breakTimer: 0, hasSpring: false, hasCoin: false });
 
         let currentY = height - 200;
         while (currentY > -height) {
@@ -385,30 +454,14 @@
         }
     }
 
-    // --- УЛУЧШЕННЫЙ ФОН ---
     function initStars() {
         stars = [];
         for(let i=0; i<100; i++) {
-            stars.push({
-                x: Math.random() * width, 
-                y: Math.random() * height,
-                size: Math.random() * 2 + 0.5, 
-                speed: Math.random() * 3 + 1,
-                layer: Math.random() > 0.5 ? 1 : 2 // 1 - фон, 2 - передний план
-            });
+            stars.push({ x: Math.random() * width, y: Math.random() * height, size: Math.random() * 2 + 0.5, speed: Math.random() * 3 + 1, layer: Math.random() > 0.5 ? 1 : 2 });
         }
-        
-        // Туманности (Nebulas)
         nebulas = [];
-        const colors = ['rgba(0, 255, 255, 0.05)', 'rgba(255, 0, 255, 0.05)', 'rgba(100, 0, 255, 0.05)'];
         for(let i=0; i<5; i++) {
-            nebulas.push({
-                x: Math.random() * width,
-                y: Math.random() * height,
-                radius: Math.random() * 200 + 100,
-                color: colors[Math.floor(Math.random() * colors.length)],
-                speed: Math.random() * 0.5 + 0.2
-            });
+            nebulas.push({ x: Math.random() * width, y: Math.random() * height, radius: Math.random() * 200 + 100, speed: Math.random() * 0.5 + 0.2 });
         }
     }
 
@@ -436,6 +489,7 @@
         player.vy += GRAVITY;
         player.y += player.vy;
 
+        // --- КОЛЛИЗИИ ---
         if (player.vy > 0) {
             platforms.forEach(p => {
                 if (p.broken) return;
@@ -443,15 +497,16 @@
                 const yOverlap = player.y + player.height > p.y && player.y + player.height < p.y + p.height + player.vy + 15;
 
                 if (xOverlap && yOverlap) {
-                    player.vy = JUMP_FORCE;
-                    playSound(300, 'sine', 0.1);
-                    
-                    for(let i=0; i<6; i++) {
-                        particles.push({
-                            x: player.x + player.width/2, y: player.y + player.height,
-                            vx: (Math.random()-0.5)*4, vy: Math.random()*2 + 1,
-                            life: 1, color: p.type === 'breakable' ? '#ffaa00' : '#fff'
-                        });
+                    // Пружина
+                    if (p.hasSpring) {
+                        player.vy = SPRING_FORCE;
+                        p.hasSpring = false; // Пружина исчезает
+                        playSound(500, 'sine', 0.2);
+                        for(let i=0; i<10; i++) particles.push({ x: player.x + player.width/2, y: p.y, vx: (Math.random()-0.5)*6, vy: Math.random()*4, life: 1, color: '#00ff88' });
+                    } else {
+                        player.vy = JUMP_FORCE;
+                        playSound(300, 'sine', 0.1);
+                        for(let i=0; i<6; i++) particles.push({ x: player.x + player.width/2, y: player.y + player.height, vx: (Math.random()-0.5)*4, vy: Math.random()*2 + 1, life: 1, color: p.type === 'breakable' ? '#ffaa00' : '#fff' });
                     }
 
                     if (p.type === 'breakable') {
@@ -463,82 +518,105 @@
             });
         }
 
+        // --- МОНЕТЫ (СБОР) ---
+        gameCoins.forEach((c, index) => {
+            if (c.collected) return;
+            const dist = Math.hypot(player.x + player.width/2 - c.x, player.y + player.height/2 - c.y);
+            if (dist < 40) {
+                c.collected = true;
+                coins++;
+                score += 5;
+                localStorage.setItem('nj_coins', coins);
+                document.getElementById('coins-display').innerText = coins;
+                playSound(800, 'sine', 0.1);
+                for(let i=0; i<8; i++) particles.push({ x: c.x, y: c.y, vx: (Math.random()-0.5)*4, vy: (Math.random()-0.5)*4, life: 1, color: '#ffcc00' });
+                gameCoins.splice(index, 1);
+            }
+        });
+
+        // Обновление платформ
         platforms.forEach(p => {
             if (p.type === 'moving' && !p.broken) {
                 p.x += p.vx;
                 if (p.x <= 0 || p.x + p.width >= width) p.vx *= -1;
             }
             if (p.broken) p.breakTimer--;
+
+            // Спавн монет над платформой
+            if (p.hasCoin && !p.broken) {
+                p.hasCoin = false;
+                gameCoins.push({ x: p.x + p.width/2, y: p.y - 30, collected: false, rot: 0 });
+            }
         });
 
         platforms = platforms.filter(p => !p.broken || p.breakTimer > 0);
         platforms = platforms.filter(p => p.y < height + 300);
 
+        // Скроллинг
         if (player.y < height / 3) {
             const scroll = height / 3 - player.y;
             player.y += scroll;
             platforms.forEach(p => p.y += scroll);
-            
-            // Прокрутка фона
-            stars.forEach(s => { 
-                s.y += scroll * (s.layer === 1 ? 0.3 : 0.8); 
-                if(s.y > height) s.y = 0; 
-            });
-            nebulas.forEach(n => {
-                n.y += scroll * n.speed;
-                if(n.y - n.radius > height) n.y = -n.radius;
-            });
+            gameCoins.forEach(c => c.y += scroll);
+            stars.forEach(s => { s.y += scroll * (s.layer === 1 ? 0.3 : 0.8); if(s.y > height) s.y = 0; });
+            nebulas.forEach(n => { n.y += scroll * n.speed; if(n.y - n.radius > height) n.y = -n.radius; });
             
             score += Math.floor(scroll);
             document.getElementById('score').innerText = score;
+
+            // Начисление монет за каждые 100 очков
+            if (Math.floor(score / 100) > Math.floor((score - Math.floor(scroll)) / 100)) {
+                coins++;
+                localStorage.setItem('nj_coins', coins);
+                document.getElementById('coins-display').innerText = coins;
+            }
         }
 
+        // Обновление частиц и монет
         for (let i = particles.length - 1; i >= 0; i--) {
             let pt = particles[i];
             pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.2; pt.life -= 0.03;
             if (pt.life <= 0) particles.splice(i, 1);
         }
+        gameCoins.forEach(c => c.rot += 0.1);
 
         generateNewPlatforms();
 
-        // --- ПРОИГРЫШ ---
+        // Проигрыш
         if (player.y > height + 150) {
             gameState = 'gameover';
-            
             let isNewRecord = false;
             if (score > highScore) {
                 highScore = score;
-                localStorage.setItem('neonjump_highscore', highScore);
+                localStorage.setItem('nj_highscore', highScore);
                 document.getElementById('highscore').innerText = highScore;
                 isNewRecord = true;
             }
-
             document.getElementById('final-score').innerText = score;
             document.getElementById('record-badge').style.display = isNewRecord ? 'inline-block' : 'none';
             document.getElementById('game-over-modal').classList.add('open');
-            
             playSound(100, 'square', 0.5);
         }
     }
 
+    // --- ОТРИСОВКА ---
     function draw() {
-        // --- УЛУЧШЕННЫЙ ФОН ---
-        // Базовый черный градиент
+        const loc = locations.find(l => l.id === currentLoc) || locations[0];
+        
+        // Фон
         const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
-        bgGradient.addColorStop(0, '#050510');
-        bgGradient.addColorStop(1, '#000000');
+        bgGradient.addColorStop(0, loc.bg1);
+        bgGradient.addColorStop(1, loc.bg2);
         ctx.fillStyle = bgGradient;
         ctx.fillRect(0, 0, width, height);
 
         // Туманности
         nebulas.forEach(n => {
             const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.radius);
-            grad.addColorStop(0, n.color);
+            grad.addColorStop(0, loc.nebula[0]);
             grad.addColorStop(1, 'transparent');
             ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2); ctx.fill();
         });
 
         // Звезды
@@ -546,12 +624,10 @@
             s.y -= s.speed;
             if (s.y < 0) { s.y = height; s.x = Math.random() * width; }
             ctx.fillStyle = `rgba(255, 255, 255, ${s.layer === 1 ? 0.2 : 0.6})`;
-            ctx.beginPath();
-            ctx.arc(s.x, s.y, s.layer === 1 ? s.size * 0.5 : s.size, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.layer === 1 ? s.size * 0.5 : s.size, 0, Math.PI * 2); ctx.fill();
         });
 
-        // Платформы со свечением
+        // Платформы
         platforms.forEach(p => {
             if (p.broken && p.breakTimer <= 0) return;
 
@@ -560,24 +636,41 @@
             else if (p.type === 'breakable') { topColor = p.broken ? '#f00' : '#ffaa00'; sideColor = '#b35900'; }
             else { topColor = '#00ffff'; sideColor = '#008888'; }
 
-            // Тень
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
             ctx.fillRect(p.x + 5, p.y + 5, p.width, p.height);
-            
-            // Боковая грань
             ctx.fillStyle = sideColor;
             ctx.fillRect(p.x, p.y, p.width, p.height + 5);
             
-            // Верхняя грань со свечением
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = topColor;
+            ctx.shadowBlur = 10; ctx.shadowColor = topColor;
             ctx.fillStyle = topColor;
             ctx.fillRect(p.x, p.y, p.width, p.height);
-            
-            // Блик
             ctx.shadowBlur = 0;
+            
             ctx.fillStyle = 'rgba(255,255,255,0.5)';
             ctx.fillRect(p.x, p.y, p.width, 3);
+
+            // Пружина
+            if (p.hasSpring) {
+                ctx.fillStyle = '#00ff88';
+                ctx.shadowBlur = 10; ctx.shadowColor = '#00ff88';
+                ctx.fillRect(p.x + p.width/2 - 10, p.y - 15, 20, 15);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(p.x + p.width/2 - 15, p.y - 20, 30, 5);
+                ctx.shadowBlur = 0;
+            }
+        });
+
+        // Монеты
+        gameCoins.forEach(c => {
+            ctx.save();
+            ctx.translate(c.x, c.y);
+            ctx.rotate(c.rot);
+            ctx.fillStyle = '#ffcc00';
+            ctx.shadowBlur = 15; ctx.shadowColor = '#ffcc00';
+            ctx.beginPath(); ctx.ellipse(0, 0, 12, 12 * Math.abs(Math.cos(c.rot)), 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.ellipse(0, 0, 6, 6 * Math.abs(Math.cos(c.rot)), 0, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
         });
 
         // Частицы
@@ -598,8 +691,7 @@
         ctx.fillStyle = '#888';
         ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height + 4);
         
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = '#fff';
+        ctx.shadowBlur = 15; ctx.shadowColor = player.glow;
         ctx.fillStyle = player.color;
         ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
         ctx.shadowBlur = 0;
@@ -624,38 +716,25 @@
     // --- ИНТЕРФЕЙС ---
     function togglePause() {
         if (gameState === 'gameover') return;
-        if (gameState === 'playing') {
-            gameState = 'paused';
-            document.getElementById('pause-modal').classList.add('open');
-        } else if (gameState === 'paused') {
-            gameState = 'playing';
-            document.getElementById('pause-modal').classList.remove('open');
-        }
+        if (gameState === 'playing') { gameState = 'paused'; document.getElementById('pause-modal').classList.add('open'); }
+        else if (gameState === 'paused') { gameState = 'playing'; document.getElementById('pause-modal').classList.remove('open'); }
     }
 
-    // ИСПРАВЛЕНИЕ БАГА С МЕНЮ
     function openMenu() {
         if (gameState !== 'menu' && gameState !== 'gameover') {
             prevGameState = gameState;
             gameState = 'menu';
         }
+        renderShop();
         document.getElementById('menu-modal').classList.add('open');
     }
 
     function closeMenu() {
         document.getElementById('menu-modal').classList.remove('open');
-        
-        // Возвращаем игру в предыдущее состояние, если это была не пауза
         if (gameState === 'menu') {
-            if (prevGameState === 'playing') {
-                gameState = 'playing';
-            } else if (prevGameState === 'paused') {
-                gameState = 'paused';
-                document.getElementById('pause-modal').classList.add('open');
-            } else {
-                // Если пришли из Game Over, перезапускаем игру
-                restartGame(); 
-            }
+            if (prevGameState === 'playing') gameState = 'playing';
+            else if (prevGameState === 'paused') { gameState = 'paused'; document.getElementById('pause-modal').classList.add('open'); }
+            else restartGame(); 
         }
     }
 
@@ -664,24 +743,15 @@
         prevGameState = 'gameover';
         document.getElementById('game-over-modal').classList.remove('open');
         document.getElementById('pause-modal').classList.remove('open');
+        renderShop();
         document.getElementById('menu-modal').classList.add('open');
-    }
-
-    function switchTab(tabName, btn) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('tab-' + tabName).classList.add('active');
     }
 
     function restartGame() {
         gameState = 'playing';
-        player.x = width / 2 - 20;
-        player.y = height - 150;
-        player.vy = 0;
-        player.tilt = 0;
+        player.x = width / 2 - 20; player.y = height - 150; player.vy = 0; player.tilt = 0;
         score = 0;
-        particles = [];
+        particles = []; gameCoins = [];
         document.getElementById('score').innerText = '0';
         document.getElementById('game-over-modal').classList.remove('open');
         document.getElementById('pause-modal').classList.remove('open');
@@ -690,10 +760,21 @@
         initStars();
     }
 
-    // Старт
+    // --- СТАРТ ---
+    updatePlayerColor();
     initPlatforms();
     initStars();
     loop();
+
+    // Настройки
+    document.getElementById('sound-slider').addEventListener('input', (e) => {
+        soundVolume = e.target.value / 100;
+        document.getElementById('sound-val').innerText = e.target.value + '%';
+    });
+    document.getElementById('sens-slider').addEventListener('input', (e) => {
+        sensitivity = 0.4 + (e.target.value / 100) * 0.8; 
+        document.getElementById('sens-val').innerText = e.target.value + '%';
+    });
 
 </script>
 </body>
