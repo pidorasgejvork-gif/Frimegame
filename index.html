@@ -209,7 +209,6 @@
                     <div class="setting-label"><span>Sensitivity</span><span id="sens-val">50%</span></div>
                     <input type="range" id="sens-slider" min="10" max="100" value="50">
                 </div>
-                <!-- ЧИТ-КОД -->
                 <button class="shop-btn btn-cheat" onclick="cheatCoins()">GIVE 9999 COINS 💰</button>
             </div>
         </div>
@@ -255,8 +254,8 @@
 
     const locations = [
         { id: 'space', name: 'Neon Space', price: 0, bg1: '#050510', bg2: '#000000', nebula: ['rgba(0,255,255,0.05)', 'rgba(255,0,255,0.05)'] },
-        { id: 'volcano', name: 'Volcano', price: 100, bg1: '#1a0505', bg2: '#000000', nebula: ['rgba(255,50,0,0.1)', 'rgba(255,150,0,0.05)'] },
-        { id: 'ice', name: 'Ice Cave', price: 200, bg1: '#05101a', bg2: '#000000', nebula: ['rgba(0,100,255,0.1)', 'rgba(0,255,255,0.05)'] }
+        { id: 'volcano', name: 'Volcano', price: 100, bg1: '#2a0505', bg2: '#000000', nebula: ['rgba(255,50,0,0.15)', 'rgba(255,150,0,0.05)'] },
+        { id: 'ice', name: 'Ice Cave', price: 200, bg1: '#05101a', bg2: '#000000', nebula: ['rgba(0,100,255,0.15)', 'rgba(0,255,255,0.05)'] }
     ];
 
     let ownedChars = JSON.parse(localStorage.getItem('nj_ownedChars') || '["default"]');
@@ -310,47 +309,15 @@
         }).join('');
     }
 
-    function cheatCoins() {
-        coins += 9999;
-        localStorage.setItem('nj_coins', coins);
-        document.getElementById('coins-display').innerText = coins;
-        playSound(1000, 'square', 0.3);
-        renderShop();
-    }
-
-    function buyChar(id, price) {
-        if (coins >= price) {
-            coins -= price; ownedChars.push(id);
-            localStorage.setItem('nj_coins', coins);
-            localStorage.setItem('nj_ownedChars', JSON.stringify(ownedChars));
-            document.getElementById('coins-display').innerText = coins;
-            playSound(600, 'sine', 0.1); renderShop();
-        } else playSound(100, 'square', 0.2);
-    }
-
-    function equipChar(id) {
-        currentChar = id; localStorage.setItem('nj_currentChar', id); renderShop();
-    }
-
-    function buyLoc(id, price) {
-        if (coins >= price) {
-            coins -= price; ownedLocs.push(id);
-            localStorage.setItem('nj_coins', coins);
-            localStorage.setItem('nj_ownedLocs', JSON.stringify(ownedLocs));
-            document.getElementById('coins-display').innerText = coins;
-            playSound(600, 'sine', 0.1); renderShop();
-        } else playSound(100, 'square', 0.2);
-    }
-
-    function equipLoc(id) {
-        currentLoc = id; localStorage.setItem('nj_currentLoc', id); renderShop();
-    }
-
+    function cheatCoins() { coins += 9999; localStorage.setItem('nj_coins', coins); document.getElementById('coins-display').innerText = coins; playSound(1000, 'square', 0.3); renderShop(); }
+    function buyChar(id, price) { if (coins >= price) { coins -= price; ownedChars.push(id); localStorage.setItem('nj_coins', coins); localStorage.setItem('nj_ownedChars', JSON.stringify(ownedChars)); document.getElementById('coins-display').innerText = coins; playSound(600, 'sine', 0.1); renderShop(); } else playSound(100, 'square', 0.2); }
+    function equipChar(id) { currentChar = id; localStorage.setItem('nj_currentChar', id); renderShop(); }
+    function buyLoc(id, price) { if (coins >= price) { coins -= price; ownedLocs.push(id); localStorage.setItem('nj_coins', coins); localStorage.setItem('nj_ownedLocs', JSON.stringify(ownedLocs)); document.getElementById('coins-display').innerText = coins; playSound(600, 'sine', 0.1); renderShop(); } else playSound(100, 'square', 0.2); }
+    function equipLoc(id) { currentLoc = id; localStorage.setItem('nj_currentLoc', id); renderShop(); }
     function switchTab(tabName, btn) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('tab-' + tabName).classList.add('active');
+        btn.classList.add('active'); document.getElementById('tab-' + tabName).classList.add('active');
     }
 
     // --- КАНВАС ---
@@ -363,44 +330,23 @@
         else { width = window.innerWidth; height = window.innerHeight; }
         canvas.width = width; canvas.height = height;
     }
-    
     resizeCanvas();
     window.addEventListener('resize', () => { resizeCanvas(); initPlatforms(); });
 
     // --- ИГРОВЫЕ ПЕРЕМЕННЫЕ ---
-    let gameState = 'playing';
-    let prevGameState = 'playing'; 
-    let score = 0;
-    let particles = [];
-    let bgParticles = []; // Частицы для фона (снег, искры и т.д.)
-    let stars = [];
-    let nebulas = [];
-    let gameCoins = [];
+    let gameState = 'playing', prevGameState = 'playing'; 
+    let score = 0, particles = [], bgParticles = [], stars = [], nebulas = [], gameCoins = [];
+    const GRAVITY = 0.55, JUMP_FORCE = -15, SPRING_FORCE = -25;
 
-    const GRAVITY = 0.55;
-    const JUMP_FORCE = -15;
-    const SPRING_FORCE = -25;
-
-    const player = {
-        x: width / 2 - 20, y: height - 150, vx: 0, vy: 0,
-        width: 36, height: 36, tilt: 0, time: 0
-    };
-
+    const player = { x: width / 2 - 20, y: height - 150, vx: 0, vy: 0, width: 36, height: 36, tilt: 0, time: 0 };
     let platforms = [];
-    let PLATFORM_WIDTH = 80;
-    let PLATFORM_HEIGHT = 20;
+    const PLATFORM_WIDTH = 80, PLATFORM_HEIGHT = 20;
     let keys = { left: false, right: false };
-    
     let pointerActive = false, pointerStartX = 0, pointerCurrentX = 0, usePointer = false;
 
-    // --- ИНИЦИАЛИЗАЦИЯ ---
     function createPlatform(y, type = 'normal') {
         let x = Math.random() * (width - PLATFORM_WIDTH);
-        let platform = {
-            x, y, width: PLATFORM_WIDTH, height: PLATFORM_HEIGHT, type,
-            vx: type === 'moving' ? (Math.random() > 0.5 ? 3 : -3) : 0,
-            broken: false, breakTimer: 0, hasSpring: false, hasCoin: false
-        };
+        let platform = { x, y, width: PLATFORM_WIDTH, height: PLATFORM_HEIGHT, type, vx: type === 'moving' ? (Math.random() > 0.5 ? 3 : -3) : 0, broken: false, breakTimer: 0, hasSpring: false, hasCoin: false };
         if (score > 5000) {
             const r = Math.random();
             if (r < 0.15 && type !== 'breakable') platform.hasSpring = true;
@@ -432,46 +378,27 @@
 
     function initStars() {
         stars = []; nebulas = []; bgParticles = [];
-        for(let i=0; i<100; i++) {
+        for(let i=0; i<80; i++) {
             stars.push({ x: Math.random() * width, y: Math.random() * height, size: Math.random() * 2 + 0.5, speed: Math.random() * 3 + 1, layer: Math.random() > 0.5 ? 1 : 2 });
         }
         for(let i=0; i<5; i++) {
             nebulas.push({ x: Math.random() * width, y: Math.random() * height, radius: Math.random() * 200 + 100, speed: Math.random() * 0.5 + 0.2 });
         }
-        // Базовые частицы фона (искры/снег)
-        for(let i=0; i<50; i++) {
-            bgParticles.push({ x: Math.random() * width, y: Math.random() * height, speed: Math.random() * 2 + 1, size: Math.random() * 3 + 1 });
+        for(let i=0; i<60; i++) {
+            bgParticles.push({ x: Math.random() * width, y: Math.random() * height, speed: Math.random() * 2 + 1, size: Math.random() * 3 + 1, rot: Math.random()*Math.PI });
         }
     }
 
     // --- УПРАВЛЕНИЕ ---
-    window.addEventListener('keydown', (e) => {
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
-    });
-    window.addEventListener('keyup', (e) => {
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
-    });
+    window.addEventListener('keydown', (e) => { if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true; if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true; });
+    window.addEventListener('keyup', (e) => { if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false; if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false; });
 
-    function handlePointerDown(e) {
-        if (e.target.closest('.top-btn') || e.target.closest('.modal-overlay')) return;
-        pointerActive = true; pointerStartX = e.touches ? e.touches[0].clientX : e.clientX; pointerCurrentX = pointerStartX; usePointer = true;
-    }
-    function handlePointerMove(e) {
-        if (!pointerActive) return;
-        pointerCurrentX = e.touches ? e.touches[0].clientX : e.clientX;
-    }
+    function handlePointerDown(e) { if (e.target.closest('.top-btn') || e.target.closest('.modal-overlay')) return; pointerActive = true; pointerStartX = e.touches ? e.touches[0].clientX : e.clientX; pointerCurrentX = pointerStartX; usePointer = true; }
+    function handlePointerMove(e) { if (!pointerActive) return; pointerCurrentX = e.touches ? e.touches[0].clientX : e.clientX; }
     function handlePointerUp() { pointerActive = false; pointerStartX = 0; pointerCurrentX = 0; usePointer = false; }
 
-    window.addEventListener('touchstart', handlePointerDown, {passive: true});
-    window.addEventListener('touchmove', handlePointerMove, {passive: true});
-    window.addEventListener('touchend', handlePointerUp);
-    window.addEventListener('touchcancel', handlePointerUp);
-    window.addEventListener('mousedown', handlePointerDown);
-    window.addEventListener('mousemove', handlePointerMove);
-    window.addEventListener('mouseup', handlePointerUp);
-    window.addEventListener('mouseleave', handlePointerUp);
+    window.addEventListener('touchstart', handlePointerDown, {passive: true}); window.addEventListener('touchmove', handlePointerMove, {passive: true}); window.addEventListener('touchend', handlePointerUp);
+    window.addEventListener('mousedown', handlePointerDown); window.addEventListener('mousemove', handlePointerMove); window.addEventListener('mouseup', handlePointerUp);
 
     // --- ЛОГИКА ---
     function update() {
@@ -487,12 +414,10 @@
 
         player.x += moveDir * 9 * sensitivity;
         player.tilt += (moveDir * 0.2 - player.tilt) * 0.2;
-
         if (player.x + player.width < 0) player.x = width;
         if (player.x > width) player.x = -player.width;
 
-        player.vy += GRAVITY;
-        player.y += player.vy;
+        player.vy += GRAVITY; player.y += player.vy;
 
         if (player.vy > 0) {
             platforms.forEach(p => {
@@ -514,8 +439,7 @@
             if (c.collected) return;
             if (Math.hypot(player.x + player.width/2 - c.x, player.y + player.height/2 - c.y) < 40) {
                 c.collected = true; coins++; score += 5;
-                localStorage.setItem('nj_coins', coins);
-                document.getElementById('coins-display').innerText = coins;
+                localStorage.setItem('nj_coins', coins); document.getElementById('coins-display').innerText = coins;
                 playSound(800, 'sine', 0.1);
                 for(let i=0; i<8; i++) particles.push({ x: c.x, y: c.y, vx: (Math.random()-0.5)*4, vy: (Math.random()-0.5)*4, life: 1, color: '#ffcc00' });
                 gameCoins.splice(index, 1);
@@ -523,10 +447,7 @@
         });
 
         platforms.forEach(p => {
-            if (p.type === 'moving' && !p.broken) {
-                p.x += p.vx;
-                if (p.x <= 0 || p.x + p.width >= width) p.vx *= -1;
-            }
+            if (p.type === 'moving' && !p.broken) { p.x += p.vx; if (p.x <= 0 || p.x + p.width >= width) p.vx *= -1; }
             if (p.broken) p.breakTimer--;
             if (p.hasCoin && !p.broken) { p.hasCoin = false; gameCoins.push({ x: p.x + p.width/2, y: p.y - 30, collected: false, rot: 0 }); }
         });
@@ -537,18 +458,12 @@
         if (player.y < height / 3) {
             const scroll = height / 3 - player.y;
             player.y += scroll; platforms.forEach(p => p.y += scroll); gameCoins.forEach(c => c.y += scroll);
-            
-            // Прокрутка фона
             stars.forEach(s => { s.y += scroll * (s.layer === 1 ? 0.3 : 0.8); if(s.y > height) s.y = 0; });
             nebulas.forEach(n => { n.y += scroll * n.speed; if(n.y - n.radius > height) n.y = -n.radius; });
             bgParticles.forEach(p => { p.y += scroll * 0.5; if(p.y > height) p.y = -10; });
             
-            score += Math.floor(scroll);
-            document.getElementById('score').innerText = score;
-
-            if (Math.floor(score / 100) > Math.floor((score - Math.floor(scroll)) / 100)) {
-                coins++; localStorage.setItem('nj_coins', coins); document.getElementById('coins-display').innerText = coins;
-            }
+            score += Math.floor(scroll); document.getElementById('score').innerText = score;
+            if (Math.floor(score / 100) > Math.floor((score - Math.floor(scroll)) / 100)) { coins++; localStorage.setItem('nj_coins', coins); document.getElementById('coins-display').innerText = coins; }
         }
 
         for (let i = particles.length - 1; i >= 0; i--) {
@@ -556,7 +471,6 @@
             if (pt.life <= 0) particles.splice(i, 1);
         }
         gameCoins.forEach(c => c.rot += 0.1);
-
         generateNewPlatforms();
 
         if (player.y > height + 150) {
@@ -570,174 +484,171 @@
         }
     }
 
-    // --- ОТРИСОВКА ПЕРСОНАЖЕЙ ---
+    // --- ОТРИСОВКА ПЕРСОНАЖЕЙ (ДЕТАЛИЗИРОВАННЫЕ) ---
     function drawPlayer() {
         ctx.save();
         ctx.translate(player.x + player.width/2, player.y + player.height/2);
         ctx.rotate(player.tilt);
-
-        const w = player.width, h = player.height;
-        const t = player.time;
+        const w = player.width, h = player.height, t = player.time;
 
         if (currentChar === 'default') {
-            // Classic с зрачками и румянцем
             ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(-w/2 + 5, -h/2 + 5, w, h);
             ctx.fillStyle = '#888'; ctx.fillRect(-w/2, -h/2, w, h + 4);
             ctx.shadowBlur = 15; ctx.shadowColor = '#fff'; ctx.fillStyle = '#fff'; ctx.fillRect(-w/2, -h/2, w, h); ctx.shadowBlur = 0;
-            
-            ctx.fillStyle = '#000';
-            const eyeOffset = player.tilt > 0 ? 3 : (player.tilt < 0 ? -3 : 0);
-            ctx.beginPath(); ctx.arc(-w/4 + eyeOffset, -h/4, 4, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(w/4 + eyeOffset, -h/4, 4, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.arc(-w/4 + eyeOffset + 1, -h/4 - 1, 1.5, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(w/4 + eyeOffset + 1, -h/4 - 1, 1.5, 0, Math.PI*2); ctx.fill();
-            
-            ctx.fillStyle = 'rgba(255, 100, 100, 0.5)';
-            ctx.beginPath(); ctx.arc(-w/2 + 6, h/4, 4, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(w/2 - 6, h/4, 4, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fillRect(-w/2 + 2, -h/2 + 2, w - 4, 2);
+            ctx.fillStyle = '#000'; const eo = player.tilt > 0 ? 3 : (player.tilt < 0 ? -3 : 0);
+            ctx.beginPath(); ctx.arc(-w/4 + eo, -h/4, 4, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(w/4 + eo, -h/4, 4, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = 'rgba(255, 100, 100, 0.5)'; ctx.beginPath(); ctx.arc(-w/2 + 6, h/4, 4, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(w/2 - 6, h/4, 4, 0, Math.PI*2); ctx.fill();
         } 
         else if (currentChar === 'ninja') {
-            // Меч ЗА СПИНОЙ (правильно)
-            ctx.save();
-            ctx.translate(0, -h/2 + 5); // Центр спины
-            ctx.rotate(-0.8); // Угол наклона
-            ctx.fillStyle = '#00ffff'; ctx.shadowBlur = 15; ctx.shadowColor = '#00ffff';
-            ctx.fillRect(-3, -h/2 - 10, 6, h + 20); // Лезвие
-            ctx.fillStyle = '#333'; ctx.shadowBlur = 0;
-            ctx.fillRect(-5, h/2, 10, 8); // Рукоять
-            ctx.fillStyle = '#ffcc00'; ctx.fillRect(-6, h/2 + 6, 12, 3); // Гарда
-            ctx.restore();
-
+            // Меч
+            ctx.save(); ctx.translate(0, -h/2 + 5); ctx.rotate(-0.8);
+            ctx.fillStyle = '#00ffff'; ctx.shadowBlur = 15; ctx.shadowColor = '#00ffff'; ctx.fillRect(-3, -h/2 - 10, 6, h + 20);
+            ctx.fillStyle = '#333'; ctx.shadowBlur = 0; ctx.fillRect(-5, h/2, 10, 8);
+            ctx.fillStyle = '#ffcc00'; ctx.fillRect(-6, h/2 + 6, 12, 3); ctx.restore();
             // Тело
             ctx.fillStyle = '#1a1a1a'; ctx.fillRect(-w/2, -h/2, w, h);
             ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 2; ctx.strokeRect(-w/2, -h/2, w, h);
-            
             // Маска
-            ctx.fillStyle = '#00ffff'; ctx.shadowBlur = 10; ctx.shadowColor = '#00ffff';
-            ctx.fillRect(-w/2, -h/2 + 6, w, 14);
-            ctx.shadowBlur = 0;
-
-            // Шарф (анимация)
-            ctx.fillStyle = '#ff00ff';
-            for(let i=0; i<3; i++) {
-                ctx.fillRect(-w/2 - 5, -h/2 + 10 + i*4, 8 + Math.sin(t + i)*4, 4);
-            }
-
-            // Глаза (щели)
-            ctx.fillStyle = '#fff';
-            const eyeOffset = player.tilt > 0 ? 3 : (player.tilt < 0 ? -3 : 0);
-            ctx.fillRect(-w/2 + 6 + eyeOffset, -h/2 + 10, 8, 3);
-            ctx.fillRect(-w/2 + 22 + eyeOffset, -h/2 + 10, 8, 3);
-
-            // Броня на груди
-            ctx.fillStyle = '#333'; ctx.fillRect(-w/4, h/4, w/2, 4);
-            ctx.fillStyle = '#00ffff'; ctx.fillRect(-w/4 + 2, h/4 + 1, w/2 - 4, 2);
+            ctx.fillStyle = '#00ffff'; ctx.shadowBlur = 10; ctx.shadowColor = '#00ffff'; ctx.fillRect(-w/2, -h/2 + 6, w, 14); ctx.shadowBlur = 0;
+            // Шарф
+            ctx.fillStyle = '#ff00ff'; for(let i=0; i<3; i++) ctx.fillRect(-w/2 - 5, -h/2 + 10 + i*4, 8 + Math.sin(t + i)*4, 4);
+            // Глаза
+            ctx.fillStyle = '#fff'; const eo = player.tilt > 0 ? 3 : (player.tilt < 0 ? -3 : 0);
+            ctx.fillRect(-w/2 + 6 + eo, -h/2 + 10, 8, 3); ctx.fillRect(-w/2 + 22 + eo, -h/2 + 10, 8, 3);
         } 
         else if (currentChar === 'golden_bear') {
-            // FNAF Gold
+            // Более массивная голова (медведь)
             ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(-w/2 + 5, -h/2 + 5, w, h);
             
-            // Уши
+            // Уши (маленькие, по бокам)
             ctx.fillStyle = '#cc9900';
-            ctx.beginPath(); ctx.arc(-w/2 + 6, -h/2 - 2, 8, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(w/2 - 6, -h/2 - 2, 8, 0, Math.PI*2); ctx.fill();
-            
-            // Голова
+            ctx.beginPath(); ctx.arc(-w/2 + 4, -h/2 + 8, 7, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w/2 - 4, -h/2 + 8, 7, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#ffcc00';
+            ctx.beginPath(); ctx.arc(-w/2 + 4, -h/2 + 8, 4, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w/2 - 4, -h/2 + 8, 4, 0, Math.PI*2); ctx.fill();
+
+            // Тело
             ctx.fillStyle = '#ffcc00'; ctx.shadowBlur = 15; ctx.shadowColor = '#ffcc00';
             ctx.fillRect(-w/2, -h/2, w, h); ctx.shadowBlur = 0;
 
-            // Морда
-            ctx.fillStyle = '#e6b800';
-            ctx.fillRect(-w/2 + 8, -h/2 + 12, w - 16, 16);
-            
-            // Глаза
-            const eyeOffset = player.tilt > 0 ? 2 : (player.tilt < 0 ? -2 : 0);
-            ctx.fillStyle = '#000';
-            ctx.beginPath(); ctx.arc(-w/4 + eyeOffset, -h/4, 5, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(w/4 + eyeOffset, -h/4, 5, 0, Math.PI*2); ctx.fill();
-            
-            // Блики
-            ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.arc(-w/4 + eyeOffset + 1, -h/4 - 1, 1.5, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(w/4 + eyeOffset + 1, -h/4 - 1, 1.5, 0, Math.PI*2); ctx.fill();
+            // Цилиндр
+            ctx.fillStyle = '#111';
+            ctx.fillRect(-w/4, -h/2 - 12, w/2, 12); // Шляпа
+            ctx.fillRect(-w/2 + 4, -h/2 - 2, w - 8, 3); // Поля
+            ctx.fillStyle = '#ffcc00'; ctx.fillRect(-w/4, -h/2 - 4, w/2, 2); // Лента
 
-            // Нос и швы
-            ctx.fillStyle = '#000'; ctx.fillRect(-2, -h/4 + 6, 4, 3);
+            // Морда
+            ctx.fillStyle = '#e6b800'; ctx.fillRect(-w/2 + 8, -h/2 + 12, w - 16, 16);
+            
+            // Глаза-пуговицы
+            const eo = player.tilt > 0 ? 2 : (player.tilt < 0 ? -2 : 0);
+            ctx.fillStyle = '#000';
+            ctx.beginPath(); ctx.arc(-w/4 + eo, -h/4, 5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w/4 + eo, -h/4, 5, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(-w/4 + eo + 1.5, -h/4 - 1.5, 1.5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w/4 + eo + 1.5, -h/4 - 1.5, 1.5, 0, Math.PI*2); ctx.fill();
+
+            // Нос и бабочка
+            ctx.fillStyle = '#000'; ctx.fillRect(-3, -h/4 + 6, 6, 4);
+            ctx.beginPath(); ctx.moveTo(0, h/2 - 10); ctx.lineTo(-6, h/2 - 14); ctx.lineTo(-6, h/2 - 6); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(0, h/2 - 10); ctx.lineTo(6, h/2 - 14); ctx.lineTo(6, h/2 - 6); ctx.fill();
+
+            // Швы
             ctx.strokeStyle = '#b38f00'; ctx.lineWidth = 1;
             ctx.beginPath(); ctx.moveTo(0, -h/2 + 4); ctx.lineTo(0, h/2); ctx.stroke();
-
-            // Бабочка
-            ctx.fillStyle = '#000';
-            ctx.beginPath(); ctx.moveTo(0, h/2 - 12); ctx.lineTo(-6, h/2 - 16); ctx.lineTo(-6, h/2 - 8); ctx.fill();
-            ctx.beginPath(); ctx.moveTo(0, h/2 - 12); ctx.lineTo(6, h/2 - 16); ctx.lineTo(6, h/2 - 8); ctx.fill();
         } 
         else if (currentChar === 'ghost') {
-            // Призрак с руками и левитацией
             const levitate = Math.sin(t) * 3;
             ctx.translate(0, levitate);
             
-            ctx.fillStyle = 'rgba(255, 0, 255, 0.3)';
+            ctx.fillStyle = 'rgba(255, 0, 255, 0.4)';
             ctx.shadowBlur = 20; ctx.shadowColor = '#ff00ff';
             
-            // Руки
             ctx.beginPath(); ctx.ellipse(-w/2 - 5, -h/4 + Math.sin(t*1.5)*5, 6, 12, -0.5, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(w/2 + 5, -h/4 + Math.sin(t*1.5+1)*5, 6, 12, 0.5, 0, Math.PI*2); ctx.fill();
 
-            // Тело
-            ctx.beginPath();
-            ctx.arc(0, -h/4, w/2, Math.PI, 0);
+            ctx.beginPath(); ctx.arc(0, -h/4, w/2, Math.PI, 0);
             ctx.lineTo(w/2, h/4);
             const wave = Math.sin(t*2) * 4;
             ctx.lineTo(w/4, h/2 + wave); ctx.lineTo(0, h/4 + wave); ctx.lineTo(-w/4, h/2 + wave); ctx.lineTo(-w/2, h/4);
             ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
 
-            // Глаза
-            ctx.fillStyle = '#000';
-            const eyeOffset = player.tilt > 0 ? 3 : (player.tilt < 0 ? -3 : 0);
-            ctx.beginPath(); ctx.ellipse(-w/4 + eyeOffset, -h/4, 4, 6, 0, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.ellipse(w/4 + eyeOffset, -h/4, 4, 6, 0, 0, Math.PI*2); ctx.fill();
-            
+            ctx.fillStyle = '#000'; const eo = player.tilt > 0 ? 3 : (player.tilt < 0 ? -3 : 0);
+            ctx.beginPath(); ctx.ellipse(-w/4 + eo, -h/4, 4, 6, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(w/4 + eo, -h/4, 4, 6, 0, 0, Math.PI*2); ctx.fill();
             ctx.fillStyle = '#fff'; ctx.shadowBlur = 10; ctx.shadowColor = '#fff';
-            ctx.beginPath(); ctx.arc(-w/4 + eyeOffset, -h/4, 1.5, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(w/4 + eyeOffset, -h/4, 1.5, 0, Math.PI*2); ctx.fill();
-            ctx.shadowBlur = 0;
+            ctx.beginPath(); ctx.arc(-w/4 + eo, -h/4, 1.5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w/4 + eo, -h/4, 1.5, 0, Math.PI*2); ctx.fill();
         }
         ctx.restore();
     }
 
-    // --- ОТРИСОВКА МИРА (ФОН + ЛОКАЦИИ) ---
+    // --- ОТРИСОВКА МИРА (ЛОКАЦИИ) ---
     function draw() {
         const loc = locations.find(l => l.id === currentLoc) || locations[0];
+        
+        // Базовый градиент
         const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
         bgGradient.addColorStop(0, loc.bg1);
         bgGradient.addColorStop(1, loc.bg2);
         ctx.fillStyle = bgGradient;
         ctx.fillRect(0, 0, width, height);
 
-        // Специфичный фон для локаций
+        // СПЕЦИФИЧНЫЕ ФОНЫ
         if (currentLoc === 'volcano') {
+            // Огромный вулкан на фоне
+            ctx.fillStyle = '#1a0505';
+            ctx.beginPath();
+            ctx.moveTo(width/2 - 150, height);
+            ctx.lineTo(width/2, height/2);
+            ctx.lineTo(width/2 + 150, height);
+            ctx.fill();
+            
+            // Лава, стекающая по вулкану
+            ctx.fillStyle = '#ff4400'; ctx.shadowBlur = 20; ctx.shadowColor = '#ff4400';
+            ctx.beginPath();
+            ctx.moveTo(width/2 - 20, height/2 + 10);
+            ctx.lineTo(width/2 - 40, height);
+            ctx.lineTo(width/2 - 10, height);
+            ctx.lineTo(width/2 + 10, height/2 + 20);
+            ctx.fill(); ctx.shadowBlur = 0;
+
             // Огненное свечение снизу
             const fireGrad = ctx.createRadialGradient(width/2, height, 0, width/2, height, height);
-            fireGrad.addColorStop(0, 'rgba(255, 50, 0, 0.2)');
+            fireGrad.addColorStop(0, 'rgba(255, 50, 0, 0.3)');
             fireGrad.addColorStop(1, 'transparent');
             ctx.fillStyle = fireGrad;
             ctx.fillRect(0, 0, width, height);
+
         } else if (currentLoc === 'ice') {
+            // Ледяные сталактиты сверху
+            ctx.fillStyle = 'rgba(0, 150, 255, 0.4)';
+            for(let i=0; i<8; i++) {
+                let x = i * (width/8) + 20;
+                ctx.beginPath(); ctx.moveTo(x-15, 0); ctx.lineTo(x+15, 0); ctx.lineTo(x, 40 + Math.sin(i)*20); ctx.fill();
+            }
+
+            // Ледяные кристаллы на фоне
+            ctx.fillStyle = 'rgba(0, 200, 255, 0.1)';
+            ctx.beginPath(); ctx.moveTo(100, height); ctx.lineTo(150, height-100); ctx.lineTo(200, height); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(width-200, height); ctx.lineTo(width-150, height-80); ctx.lineTo(width-100, height); ctx.fill();
+
             // Ледяной туман
             ctx.fillStyle = 'rgba(0, 100, 255, 0.05)';
             ctx.fillRect(0, height/2, width, height/2);
         }
 
+        // Туманности
         nebulas.forEach(n => {
             const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.radius);
             grad.addColorStop(0, loc.nebula[0]);
             grad.addColorStop(1, 'transparent');
-            ctx.fillStyle = grad;
-            ctx.beginPath(); ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2); ctx.fill();
         });
 
+        // Звезды
         stars.forEach(s => {
             s.y -= s.speed;
             if (s.y < 0) { s.y = height; s.x = Math.random() * width; }
@@ -745,23 +656,27 @@
             ctx.beginPath(); ctx.arc(s.x, s.y, s.layer === 1 ? s.size * 0.5 : s.size, 0, Math.PI * 2); ctx.fill();
         });
 
-        // Частицы фона (снег, искры)
+        // Частицы фона (Снег/Искры)
         bgParticles.forEach(p => {
-            if (currentLoc === 'space') {
-                // Кометы
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                ctx.fillRect(p.x, p.y, p.size * 4, 1);
-            } else if (currentLoc === 'volcano') {
-                // Искры
+            if (currentLoc === 'volcano') {
                 ctx.fillStyle = `rgba(255, ${Math.random()*100+100}, 0, 0.8)`;
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.size * 0.5, 0, Math.PI*2); ctx.fill();
+                p.y -= p.speed * 2; // Искры летят вверх
+                p.x += Math.sin(p.y * 0.05) * 1; // Кружатся
             } else if (currentLoc === 'ice') {
-                // Снег
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+                p.y += p.speed; // Снег падает вниз
+                p.x += Math.sin(p.y * 0.02) * 1;
+            } else {
+                // Кометы в космосе
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.fillRect(p.x, p.y, p.size * 5, 1);
+                p.y += p.speed;
+                p.x -= p.speed;
             }
-            p.y += p.speed;
             if (p.y > height) { p.y = -10; p.x = Math.random() * width; }
+            if (p.y < -10) { p.y = height + 10; p.x = Math.random() * width; }
         });
 
         // Платформы
@@ -786,6 +701,7 @@
             }
         });
 
+        // Монеты
         gameCoins.forEach(c => {
             ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.rot);
             ctx.fillStyle = '#ffcc00'; ctx.shadowBlur = 15; ctx.shadowColor = '#ffcc00';
@@ -794,11 +710,13 @@
             ctx.restore();
         });
 
+        // Частицы
         particles.forEach(pt => {
             ctx.globalAlpha = pt.life; ctx.fillStyle = pt.color; ctx.fillRect(pt.x, pt.y, 4, 4);
         });
         ctx.globalAlpha = 1;
 
+        // Игрок
         drawPlayer();
     }
 
@@ -809,64 +727,17 @@
     }
 
     // --- ИНТЕРФЕЙС ---
-    function togglePause() {
-        if (gameState === 'gameover') return;
-        if (gameState === 'playing') { gameState = 'paused'; document.getElementById('pause-modal').classList.add('open'); }
-        else if (gameState === 'paused') { gameState = 'playing'; document.getElementById('pause-modal').classList.remove('open'); }
-    }
+    function togglePause() { if (gameState === 'gameover') return; if (gameState === 'playing') { gameState = 'paused'; document.getElementById('pause-modal').classList.add('open'); } else if (gameState === 'paused') { gameState = 'playing'; document.getElementById('pause-modal').classList.remove('open'); } }
+    function openMenu() { if (gameState !== 'menu' && gameState !== 'gameover') { prevGameState = gameState; gameState = 'menu'; } renderShop(); document.getElementById('menu-modal').classList.add('open'); }
+    function closeMenu() { document.getElementById('menu-modal').classList.remove('open'); if (gameState === 'menu') { if (prevGameState === 'playing') gameState = 'playing'; else if (prevGameState === 'paused') { gameState = 'paused'; document.getElementById('pause-modal').classList.add('open'); } else restartGame(); } }
+    function goToMenu() { gameState = 'menu'; prevGameState = 'gameover'; document.getElementById('game-over-modal').classList.remove('open'); document.getElementById('pause-modal').classList.remove('open'); renderShop(); document.getElementById('menu-modal').classList.add('open'); }
+    function restartGame() { gameState = 'playing'; player.x = width / 2 - 20; player.y = height - 150; player.vy = 0; player.tilt = 0; score = 0; particles = []; gameCoins = []; document.getElementById('score').innerText = '0'; document.getElementById('game-over-modal').classList.remove('open'); document.getElementById('pause-modal').classList.remove('open'); document.getElementById('menu-modal').classList.remove('open'); initPlatforms(); initStars(); }
 
-    function openMenu() {
-        if (gameState !== 'menu' && gameState !== 'gameover') {
-            prevGameState = gameState;
-            gameState = 'menu';
-        }
-        renderShop();
-        document.getElementById('menu-modal').classList.add('open');
-    }
+    initPlatforms(); initStars(); loop();
 
-    function closeMenu() {
-        document.getElementById('menu-modal').classList.remove('open');
-        if (gameState === 'menu') {
-            if (prevGameState === 'playing') gameState = 'playing';
-            else if (prevGameState === 'paused') { gameState = 'paused'; document.getElementById('pause-modal').classList.add('open'); }
-            else restartGame(); 
-        }
-    }
-
-    function goToMenu() {
-        gameState = 'menu'; prevGameState = 'gameover';
-        document.getElementById('game-over-modal').classList.remove('open');
-        document.getElementById('pause-modal').classList.remove('open');
-        renderShop();
-        document.getElementById('menu-modal').classList.add('open');
-    }
-
-    function restartGame() {
-        gameState = 'playing';
-        player.x = width / 2 - 20; player.y = height - 150; player.vy = 0; player.tilt = 0;
-        score = 0; particles = []; gameCoins = [];
-        document.getElementById('score').innerText = '0';
-        document.getElementById('game-over-modal').classList.remove('open');
-        document.getElementById('pause-modal').classList.remove('open');
-        document.getElementById('menu-modal').classList.remove('open');
-        initPlatforms();
-        initStars();
-    }
-
-    // --- СТАРТ ---
-    initPlatforms();
-    initStars();
-    loop();
-
-    document.getElementById('sound-slider').addEventListener('input', (e) => {
-        soundVolume = e.target.value / 100;
-        document.getElementById('sound-val').innerText = e.target.value + '%';
-    });
-    document.getElementById('sens-slider').addEventListener('input', (e) => {
-        sensitivity = 0.4 + (e.target.value / 100) * 0.8; 
-        document.getElementById('sens-val').innerText = e.target.value + '%';
-    });
+    document.getElementById('sound-slider').addEventListener('input', (e) => { soundVolume = e.target.value / 100; document.getElementById('sound-val').innerText = e.target.value + '%'; });
+    document.getElementById('sens-slider').addEventListener('input', (e) => { sensitivity = 0.4 + (e.target.value / 100) * 0.8; document.getElementById('sens-val').innerText = e.target.value + '%'; });
 
 </script>
 </body>
-                </html>
+                    </html>
