@@ -261,7 +261,6 @@
         { id: 'ice', name: 'Ice Cave', price: 200, bg1: '#05101a', bg2: '#000000', nebula: ['rgba(0,100,255,0.1)', 'rgba(0,255,255,0.05)'] }
     ];
 
-    // Загрузка прогресса
     let ownedChars = JSON.parse(localStorage.getItem('nj_ownedChars') || '["default"]');
     let ownedLocs = JSON.parse(localStorage.getItem('nj_ownedLocs') || '["space"]');
     let currentChar = localStorage.getItem('nj_currentChar') || 'default';
@@ -274,7 +273,6 @@
 
     // --- UI МАГАЗИНА ---
     function renderShop() {
-        // Персонажи
         const charsGrid = document.getElementById('chars-grid');
         charsGrid.innerHTML = characters.map(c => {
             const isOwned = ownedChars.includes(c.id);
@@ -291,7 +289,6 @@
             `;
         }).join('');
 
-        // Локации
         const locsGrid = document.getElementById('levels-grid');
         locsGrid.innerHTML = locations.map(l => {
             const isOwned = ownedLocs.includes(l.id);
@@ -384,7 +381,6 @@
     let particles = [];
     let stars = [];
     let nebulas = [];
-    let springs = [];
     let gameCoins = [];
 
     const GRAVITY = 0.55;
@@ -400,7 +396,12 @@
     let PLATFORM_WIDTH = 80;
     let PLATFORM_HEIGHT = 20;
     let keys = { left: false, right: false };
-    let touchStartX = null, touchCurrentX = null;
+    
+    // ИСПРАВЛЕННЫЕ ПЕРЕМЕННЫЕ ДЛЯ УПРАВЛЕНИЯ
+    let pointerActive = false;
+    let pointerStartX = 0;
+    let pointerCurrentX = 0;
+    let usePointer = false;
 
     // --- ИНИЦИАЛИЗАЦИЯ ---
     function createPlatform(y, type = 'normal') {
@@ -410,21 +411,16 @@
             vx: type === 'moving' ? (Math.random() > 0.5 ? 3 : -3) : 0,
             broken: false, breakTimer: 0, hasSpring: false, hasCoin: false
         };
-
-        // Спавн айтемов (только если счет > 5000)
         if (score > 5000) {
             const r = Math.random();
             if (r < 0.15 && type !== 'breakable') platform.hasSpring = true;
             else if (r < 0.3) platform.hasCoin = true;
         }
-
         return platform;
     }
 
     function initPlatforms() {
-        platforms = [];
-        springs = [];
-        gameCoins = [];
+        platforms = []; gameCoins = [];
         platforms.push({ x: width / 2 - PLATFORM_WIDTH / 2, y: height - 100, width: PLATFORM_WIDTH, height: PLATFORM_HEIGHT, type: 'normal', vx: 0, broken: false, breakTimer: 0, hasSpring: false, hasCoin: false });
 
         let currentY = height - 200;
@@ -433,7 +429,6 @@
             const r = Math.random();
             if (r < 0.25) type = 'breakable';
             else if (r < 0.5) type = 'moving';
-            
             platforms.push(createPlatform(currentY, type));
             currentY -= (80 + Math.random() * 50);
         }
@@ -442,13 +437,11 @@
     function generateNewPlatforms() {
         let minY = 0;
         platforms.forEach(p => { if (p.y < minY) minY = p.y; });
-
         if (minY > -height) {
             let type = 'normal';
             const r = Math.random();
             if (r < 0.25) type = 'breakable';
             else if (r < 0.5) type = 'moving';
-            
             const gap = 80 + Math.random() * 50;
             platforms.push(createPlatform(minY - gap, type));
         }
@@ -465,18 +458,65 @@
         }
     }
 
+    // --- УПРАВЛЕНИЕ (ИСПРАВЛЕНО) ---
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+    });
+    window.addEventListener('keyup', (e) => {
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+    });
+
+    // Тач и Мышь (Универсально)
+    function handlePointerDown(e) {
+        // Игнорируем клики по кнопкам UI
+        if (e.target.closest('.top-btn') || e.target.closest('.modal-overlay')) return;
+        pointerActive = true;
+        pointerStartX = e.touches ? e.touches[0].clientX : e.clientX;
+        pointerCurrentX = pointerStartX;
+        usePointer = true;
+    }
+
+    function handlePointerMove(e) {
+        if (!pointerActive) return;
+        pointerCurrentX = e.touches ? e.touches[0].clientX : e.clientX;
+    }
+
+    function handlePointerUp() {
+        pointerActive = false;
+        pointerStartX = 0;
+        pointerCurrentX = 0;
+        usePointer = false;
+    }
+
+    window.addEventListener('touchstart', handlePointerDown, {passive: true});
+    window.addEventListener('touchmove', handlePointerMove, {passive: true});
+    window.addEventListener('touchend', handlePointerUp);
+    window.addEventListener('touchcancel', handlePointerUp);
+
+    // Для ПК (Мышь)
+    window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('mousemove', handlePointerMove);
+    window.addEventListener('mouseup', handlePointerUp);
+    window.addEventListener('mouseleave', handlePointerUp);
+
     // --- ЛОГИКА ---
     function update() {
         if (gameState !== 'playing') return;
 
         let moveDir = 0;
+        
+        // Приоритет клавиатуры
         if (keys.left) moveDir = -1;
         else if (keys.right) moveDir = 1;
         
-        if (touchStartX !== null && touchCurrentX !== null) {
-            const diff = touchCurrentX - touchStartX;
-            if (diff < -15 / sensitivity) moveDir = -1;
-            else if (diff > 15 / sensitivity) moveDir = 1;
+        // Обработка мыши/тача
+        if (moveDir === 0 && usePointer && pointerActive) {
+            const diff = pointerCurrentX - pointerStartX;
+            const deadZone = 15 / sensitivity; // Чем выше чувствительность, тем меньше мертвая зона
+            if (diff < -deadZone) moveDir = -1;
+            else if (diff > deadZone) moveDir = 1;
         }
 
         const speed = 9 * sensitivity;
@@ -497,10 +537,9 @@
                 const yOverlap = player.y + player.height > p.y && player.y + player.height < p.y + p.height + player.vy + 15;
 
                 if (xOverlap && yOverlap) {
-                    // Пружина
                     if (p.hasSpring) {
                         player.vy = SPRING_FORCE;
-                        p.hasSpring = false; // Пружина исчезает
+                        p.hasSpring = false;
                         playSound(500, 'sine', 0.2);
                         for(let i=0; i<10; i++) particles.push({ x: player.x + player.width/2, y: p.y, vx: (Math.random()-0.5)*6, vy: Math.random()*4, life: 1, color: '#00ff88' });
                     } else {
@@ -541,8 +580,6 @@
                 if (p.x <= 0 || p.x + p.width >= width) p.vx *= -1;
             }
             if (p.broken) p.breakTimer--;
-
-            // Спавн монет над платформой
             if (p.hasCoin && !p.broken) {
                 p.hasCoin = false;
                 gameCoins.push({ x: p.x + p.width/2, y: p.y - 30, collected: false, rot: 0 });
@@ -564,7 +601,6 @@
             score += Math.floor(scroll);
             document.getElementById('score').innerText = score;
 
-            // Начисление монет за каждые 100 очков
             if (Math.floor(score / 100) > Math.floor((score - Math.floor(scroll)) / 100)) {
                 coins++;
                 localStorage.setItem('nj_coins', coins);
@@ -572,7 +608,6 @@
             }
         }
 
-        // Обновление частиц и монет
         for (let i = particles.length - 1; i >= 0; i--) {
             let pt = particles[i];
             pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.2; pt.life -= 0.03;
@@ -602,15 +637,12 @@
     // --- ОТРИСОВКА ---
     function draw() {
         const loc = locations.find(l => l.id === currentLoc) || locations[0];
-        
-        // Фон
         const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
         bgGradient.addColorStop(0, loc.bg1);
         bgGradient.addColorStop(1, loc.bg2);
         ctx.fillStyle = bgGradient;
         ctx.fillRect(0, 0, width, height);
 
-        // Туманности
         nebulas.forEach(n => {
             const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.radius);
             grad.addColorStop(0, loc.nebula[0]);
@@ -619,7 +651,6 @@
             ctx.beginPath(); ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2); ctx.fill();
         });
 
-        // Звезды
         stars.forEach(s => {
             s.y -= s.speed;
             if (s.y < 0) { s.y = height; s.x = Math.random() * width; }
@@ -627,7 +658,6 @@
             ctx.beginPath(); ctx.arc(s.x, s.y, s.layer === 1 ? s.size * 0.5 : s.size, 0, Math.PI * 2); ctx.fill();
         });
 
-        // Платформы
         platforms.forEach(p => {
             if (p.broken && p.breakTimer <= 0) return;
 
@@ -649,7 +679,6 @@
             ctx.fillStyle = 'rgba(255,255,255,0.5)';
             ctx.fillRect(p.x, p.y, p.width, 3);
 
-            // Пружина
             if (p.hasSpring) {
                 ctx.fillStyle = '#00ff88';
                 ctx.shadowBlur = 10; ctx.shadowColor = '#00ff88';
@@ -660,7 +689,6 @@
             }
         });
 
-        // Монеты
         gameCoins.forEach(c => {
             ctx.save();
             ctx.translate(c.x, c.y);
@@ -673,7 +701,6 @@
             ctx.restore();
         });
 
-        // Частицы
         particles.forEach(pt => {
             ctx.globalAlpha = pt.life;
             ctx.fillStyle = pt.color;
@@ -681,7 +708,6 @@
         });
         ctx.globalAlpha = 1;
 
-        // Игрок
         ctx.save();
         ctx.translate(player.x + player.width/2, player.y + player.height/2);
         ctx.rotate(player.tilt);
@@ -766,7 +792,6 @@
     initStars();
     loop();
 
-    // Настройки
     document.getElementById('sound-slider').addEventListener('input', (e) => {
         soundVolume = e.target.value / 100;
         document.getElementById('sound-val').innerText = e.target.value + '%';
@@ -778,4 +803,4 @@
 
 </script>
 </body>
-    </html>
+                </html>
