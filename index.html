@@ -574,7 +574,7 @@
         }
     }
 
-    // --- ОТРИСОВКА ПЕРСОНАЖЕЙ (ОБНОВЛЕННЫЕ АКСОЛОТЛЬ И РОБОТ) ---
+    // --- ОТРИСОВКА ПЕРСОНАЖЕЙ (v7.0 - МАКСИМАЛЬНОЕ КАЧЕСТВО) ---
     function drawPlayer() {
         ctx.save();
         ctx.translate(player.x + player.width/2, player.y + player.height/2);
@@ -582,6 +582,7 @@
         const w = player.width, h = player.height, t = player.time;
 
         if (currentChar === 'default') {
+            // Классика с объемом
             ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(-w/2 + 4, -h/2 + 4, w, h);
             ctx.fillStyle = '#ccc'; ctx.fillRect(-w/2, -h/2, w, h);
             ctx.fillStyle = '#fff'; ctx.fillRect(-w/2 + 2, -h/2 + 2, w - 4, h - 4);
@@ -592,6 +593,7 @@
             ctx.fillStyle = 'rgba(255, 100, 100, 0.6)'; ctx.beginPath(); ctx.arc(-w/2 + 6, h/4, 4, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(w/2 - 6, h/4, 4, 0, Math.PI*2); ctx.fill();
         } 
         else if (currentChar === 'ninja') {
+            // Ниндзя (меч за спиной, маска)
             ctx.save(); ctx.translate(0, -h/4); ctx.rotate(-0.6);
             ctx.fillStyle = '#222'; ctx.fillRect(-4, -h/2 - 15, 8, h/2 + 15);
             ctx.fillStyle = '#00ffff'; ctx.fillRect(-2, -h/2 - 15, 4, 10);
@@ -608,6 +610,7 @@
             ctx.fillStyle = '#00ffff'; ctx.beginPath(); ctx.moveTo(w/2, -h/2 + 8); ctx.lineTo(w/2 + 10 + Math.sin(t*5)*5, -h/2 + 15); ctx.lineTo(w/2, -h/2 + 14); ctx.fill();
         } 
         else if (currentChar === 'golden_bear') {
+            // Медведь (цилиндр, бабочка)
             ctx.fillStyle = '#ffcc00'; ctx.shadowBlur = 15; ctx.shadowColor = '#ffcc00';
             ctx.fillRect(-w/2, -h/2, w, h); ctx.shadowBlur = 0;
             ctx.fillStyle = '#cc9900'; ctx.beginPath(); ctx.arc(-w/2 + 6, -h/2 + 4, 8, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(w/2 - 6, -h/2 + 4, 8, 0, Math.PI*2); ctx.fill();
@@ -623,36 +626,34 @@
             ctx.fillStyle = '#111'; ctx.beginPath(); ctx.moveTo(0, h/2 - 4); ctx.lineTo(-8, h/2 - 10); ctx.lineTo(-8, h/2 + 2); ctx.fill(); ctx.beginPath(); ctx.moveTo(0, h/2 - 4); ctx.lineTo(8, h/2 - 10); ctx.lineTo(8, h/2 + 2); ctx.fill();
         } 
         else if (currentChar === 'ghost') {
+            // Призрак (рваный)
             const levitate = Math.sin(t) * 4;
             ctx.translate(0, levitate);
             ctx.fillStyle = 'rgba(200, 0, 255, 0.4)'; ctx.shadowBlur = 25; ctx.shadowColor = '#ff00ff';
-            
-            ctx.beginPath();
-            ctx.moveTo(-w/2, -h/2);
-            ctx.lineTo(w/2, -h/2);
-            ctx.lineTo(w/2, h/4);
-            const wave = Math.sin(t*3) * 4;
+            ctx.beginPath(); ctx.ellipse(-w/2 - 4, -h/4, 6, 16, -0.6, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.ellipse(w/2 + 4, -h/4, 6, 16, 0.6, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(0, -h/4, w/2, Math.PI, 0); ctx.lineTo(w/2, h/4);
+            const wave = Math.sin(t*3) * 5;
             ctx.lineTo(w/3, h/2 + wave); ctx.lineTo(w/6, h/4 - wave); ctx.lineTo(0, h/2 + wave*1.5); ctx.lineTo(-w/6, h/4 - wave); ctx.lineTo(-w/3, h/2 + wave); ctx.lineTo(-w/2, h/4);
             ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
-
             ctx.fillStyle = '#000'; const eo = player.tilt > 0 ? 3 : (player.tilt < 0 ? -3 : 0);
             ctx.beginPath(); ctx.ellipse(-w/4 + eo, -h/4, 5, 8, 0, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.ellipse(w/4 + eo, -h/4, 5, 8, 0, 0, Math.PI*2); ctx.fill();
             ctx.fillStyle = '#fff'; ctx.shadowBlur = 10; ctx.shadowColor = '#fff';
             ctx.beginPath(); ctx.arc(-w/4 + eo, -h/4 + 2, 1.5, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(w/4 + eo, -h/4 + 2, 1.5, 0, Math.PI*2); ctx.fill();
         }
         else if (currentChar === 'goblin') {
+            // Гоблин (острые уши, шапка)
             ctx.fillStyle = '#2d5a27'; ctx.fillRect(-w/2 + 4, h/4 - 2, w - 8, h/2 + 2);
-            ctx.fillStyle = '#4caf50'; ctx.fillRect(-w/2 + 2, -h/2 + 2, w - 4, h/2);
-            ctx.beginPath(); ctx.moveTo(-w/2 + 2, -h/4); ctx.lineTo(-w/2 - 10, -h/2); ctx.lineTo(-w/2 + 4, -h/4 - 4); ctx.fill(); 
-            ctx.beginPath(); ctx.moveTo(w/2 - 2, -h/4); ctx.lineTo(w/2 + 10, -h/2); ctx.lineTo(w/2 - 4, -h/4 - 4); ctx.fill();
-            ctx.fillStyle = '#d32f2f'; ctx.beginPath(); ctx.moveTo(-w/2 + 2, -h/2 + 4); ctx.lineTo(0, -h/2 - 16); ctx.lineTo(w/2 - 2, -h/2 + 4); ctx.fill();
+            ctx.fillStyle = '#4caf50'; ctx.beginPath(); ctx.ellipse(0, -h/4, w/2 - 2, h/2, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#4caf50'; ctx.beginPath(); ctx.moveTo(-w/2, -h/4); ctx.lineTo(-w/2 - 12, -h/2); ctx.lineTo(-w/2 + 4, -h/4 - 4); ctx.fill(); ctx.beginPath(); ctx.moveTo(w/2, -h/4); ctx.lineTo(w/2 + 12, -h/2); ctx.lineTo(w/2 - 4, -h/4 - 4); ctx.fill();
+            ctx.fillStyle = '#d32f2f'; ctx.beginPath(); ctx.moveTo(-w/2, -h/2 + 4); ctx.lineTo(0, -h/2 - 16); ctx.lineTo(w/2, -h/2 + 4); ctx.fill();
             ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, -h/2 - 16, 4, 0, Math.PI*2); ctx.fill();
             ctx.fillStyle = '#ffeb3b'; ctx.fillRect(-w/4, -h/4 - 2, 6, 4); ctx.fillRect(w/4 - 6, -h/4 - 2, 6, 4);
             ctx.fillStyle = '#000'; ctx.fillRect(-w/4 + 2, -h/4 - 1, 2, 2); ctx.fillRect(w/4 - 4, -h/4 - 1, 2, 2);
             ctx.strokeStyle = '#1b5e20'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, h/4 - 4, 6, 0, Math.PI); ctx.stroke();
         }
         else if (currentChar === 'spider') {
-            ctx.fillStyle = '#111'; ctx.fillRect(-w/2 + 4, -h/2 + 4, w - 8, h - 8);
+            // Паук (мохнатый, 6 глаз)
+            ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(0, 0, w/2.2, 0, Math.PI*2); ctx.fill();
             ctx.fillStyle = '#222'; for(let i=0; i<10; i++) ctx.fillRect(-w/2 + Math.random()*w, -h/2 + Math.random()*h, 2, 2);
             ctx.strokeStyle = '#111'; ctx.lineWidth = 4;
             for(let i=0; i<4; i++) {
@@ -666,58 +667,83 @@
             ctx.shadowBlur = 0;
         }
         else if (currentChar === 'robot') {
-            // РОБОТ (По референсу, без ног, на левитации)
-            const levitate = Math.sin(t*2) * 2;
+            // РОБОТ (ТОЛЬКО ГОЛОВА С НАУШНИКАМИ, БЕЗ НОГ, КАК НА ФОТО)
+            const levitate = Math.sin(t*2) * 3;
             ctx.translate(0, levitate);
 
-            // Левитирующая платформа (скейтборд)
-            ctx.fillStyle = '#b0bec5'; 
-            ctx.beginPath(); ctx.ellipse(0, h/2 + 5, w/2 + 5, 8, 0, 0, Math.PI*2); ctx.fill();
+            // Тень под головой (чтобы висел в воздухе)
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath(); ctx.ellipse(0, h/2 + 15, w/2, 5, 0, 0, Math.PI*2); ctx.fill();
+
+            // Наушники (сзади)
+            ctx.fillStyle = '#e0e0e0'; 
+            ctx.beginPath(); ctx.arc(-w/2, 0, 14, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w/2, 0, 14, 0, Math.PI*2); ctx.fill();
+            
+            // Подсветка наушников
             ctx.fillStyle = '#00e5ff'; ctx.shadowBlur = 15; ctx.shadowColor = '#00e5ff';
-            ctx.beginPath(); ctx.ellipse(0, h/2 + 8, w/2 + 5, 4, 0, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
-
-            // Тело (белое)
-            ctx.fillStyle = '#f5f5f5'; 
-            ctx.beginPath(); ctx.roundRect(-w/2 + 4, -h/2 + 6, w - 8, h - 10, 8); ctx.fill();
-            
-            // Наушники
-            ctx.fillStyle = '#00e5ff'; ctx.shadowBlur = 10; ctx.shadowColor = '#00e5ff';
-            ctx.beginPath(); ctx.ellipse(-w/2, -h/4, 6, 12, 0, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.ellipse(w/2, -h/4, 6, 12, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(-w/2, 0, 10, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w/2, 0, 10, 0, Math.PI*2); ctx.fill();
             ctx.shadowBlur = 0;
-            ctx.fillStyle = '#f5f5f5'; 
-            ctx.beginPath(); ctx.ellipse(-w/2 - 2, -h/4, 3, 6, 0, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.ellipse(w/2 + 2, -h/4, 3, 6, 0, 0, Math.PI*2); ctx.fill();
 
-            // Визор (черный экран)
-            ctx.fillStyle = '#222'; ctx.beginPath(); ctx.roundRect(-w/2 + 8, -h/2 + 10, w - 16, h/2, 6); ctx.fill();
+            // Внутренняя часть наушников
+            ctx.fillStyle = '#fff'; 
+            ctx.beginPath(); ctx.arc(-w/2, 0, 6, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(w/2, 0, 6, 0, Math.PI*2); ctx.fill();
+
+            // Голова (белая, квадратная с закруглениями)
+            ctx.fillStyle = '#f5f5f5';
+            ctx.beginPath(); ctx.roundRect(-w/2 + 4, -h/2 + 2, w - 8, h - 4, 10); ctx.fill();
             
+            // Черный визор (экран)
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath(); ctx.roundRect(-w/2 + 8, -h/2 + 6, w - 16, h - 16, 8); ctx.fill();
+
             // Глаза на экране (мигают)
-            const blink = Math.sin(t*5) > 0.8 ? 0 : 1;
+            const blink = Math.sin(t*4) > 0.9 ? 0 : 1;
             if (blink) {
                 ctx.fillStyle = '#00e5ff'; ctx.shadowBlur = 10; ctx.shadowColor = '#00e5ff';
-                ctx.beginPath(); ctx.roundRect(-w/4 - 4, -h/4, 8, 8, 2); ctx.fill();
-                ctx.beginPath(); ctx.roundRect(w/4 - 4, -h/4, 8, 8, 2); ctx.fill();
+                ctx.beginPath(); ctx.roundRect(-w/4 - 2, -h/4, 10, 10, 3); ctx.fill();
+                ctx.beginPath(); ctx.roundRect(w/4 - 8, -h/4, 10, 10, 3); ctx.fill();
                 ctx.shadowBlur = 0;
             }
 
             // Антенна
-            ctx.strokeStyle = '#f5f5f5'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -h/2 + 6); ctx.lineTo(0, -h/2 - 6); ctx.stroke();
-            ctx.fillStyle = '#00e5ff'; ctx.beginPath(); ctx.arc(0, -h/2 - 6, 3, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 3; 
+            ctx.beginPath(); ctx.moveTo(0, -h/2 + 2); ctx.lineTo(0, -h/2 - 10); ctx.stroke();
+            ctx.fillStyle = '#00e5ff'; ctx.beginPath(); ctx.arc(0, -h/2 - 10, 4, 0, Math.PI*2); ctx.fill();
         }
         else if (currentChar === 'gecko') {
-            ctx.fillStyle = '#00e676'; 
-            ctx.fillRect(-w/2 + 4, -h/2 + 6, w - 8, h - 12);
+            // ГЕККОН (Чешуя, хвост, присоски)
+            // Хвост
             ctx.strokeStyle = '#00e676'; ctx.lineWidth = 6; ctx.lineCap = 'round';
             ctx.beginPath(); ctx.moveTo(-w/2 + 4, 0); ctx.quadraticCurveTo(-w/2 - 12, -10 + Math.sin(t*5)*8, -w/2 - 16, 10); ctx.stroke();
-            ctx.fillStyle = '#00c853'; ctx.fillRect(w/4 - 4, -h/2 + 2, w/2, h/2);
-            ctx.fillStyle = '#00c853'; for(let i=0; i<4; i++) { let lx = (i%2===0 ? -w/4 : w/4), ly = (i<2 ? -h/4 : h/4); ctx.fillRect(lx-3, ly-3, 6, 6); }
-            ctx.fillStyle = '#fff'; ctx.fillRect(w/4 - 2, -h/4 - 2, 6, 6); ctx.fillRect(w/4 + 8, -h/4 - 2, 6, 6);
-            ctx.fillStyle = '#000'; ctx.fillRect(w/4 - 1, -h/4 - 1, 2, 4); ctx.fillRect(w/4 + 9, -h/4 - 1, 2, 4);
-            ctx.fillStyle = '#00c853'; for(let i=0; i<5; i++) { ctx.fillRect(-w/4 + Math.random()*w/2, -h/4 + Math.random()*h/2, 3, 3); }
+            
+            // Тело
+            ctx.fillStyle = '#00e676'; ctx.beginPath(); ctx.ellipse(0, 0, w/2.2, h/2.5, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#00c853'; // Чешуйки
+            for(let i=0; i<6; i++) { ctx.beginPath(); ctx.arc(-w/4 + Math.random()*w/2, -h/4 + Math.random()*h/2, 2, 0, Math.PI*2); ctx.fill(); }
+            
+            // Голова
+            ctx.fillStyle = '#00c853'; ctx.beginPath(); ctx.ellipse(w/4, -h/4, w/3, h/3, 0, 0, Math.PI*2); ctx.fill();
+            
+            // Глаза
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(w/4 - 2, -h/4 - 2, 6, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(w/4 + 8, -h/4 - 2, 6, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#000'; ctx.fillRect(w/4 - 3, -h/4 - 4, 2, 4); ctx.fillRect(w/4 + 7, -h/4 - 4, 2, 4);
+            
+            // Лапки
+            ctx.fillStyle = '#00c853';
+            for(let i=0; i<4; i++) {
+                let lx = (i%2===0 ? -w/4 : w/4), ly = (i<2 ? -h/4 : h/4);
+                ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(lx, ly, 2, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#00c853';
+            }
         }
         else if (currentChar === 'axolotl') {
-            // АКСОЛОТЛЬ (В стиле Minecraft - пиксельный, квадратный)
+            // АКСОЛОТЛЬ (В стиле Minecraft, пиксельный)
+            const levitate = Math.sin(t) * 2;
+            ctx.translate(0, levitate);
+
             // Голова
             ctx.fillStyle = '#f48fb1'; 
             ctx.fillRect(-w/2 + 4, -h/2 + 4, w - 8, h - 8);
@@ -745,7 +771,7 @@
             ctx.fillRect(-4, h/4 - 4, 2, 2);
             ctx.fillRect(2, h/4 - 4, 2, 2);
 
-            // Румянец (пиксельный)
+            // Румянец
             ctx.fillStyle = 'rgba(255, 64, 129, 0.5)';
             ctx.fillRect(-w/2 + 6, h/4, 4, 4);
             ctx.fillRect(w/2 - 10, h/4, 4, 4);
@@ -754,6 +780,7 @@
         ctx.restore();
     }
 
+    // --- ОТРИСОВКА МИРА (ЛОКАЦИИ v7.0) ---
     function draw() {
         const loc = locations.find(l => l.id === currentLoc) || locations[0];
         
@@ -765,41 +792,95 @@
 
         // СПЕЦИФИЧНЫЕ ФОНЫ
         if (currentLoc === 'volcano') {
+            // Объемный вулкан
             ctx.fillStyle = '#1a0505';
-            ctx.beginPath(); ctx.moveTo(0, height); ctx.lineTo(width/4, height/3); ctx.lineTo(width/2, height/2.5); ctx.lineTo(width*0.75, height/3); ctx.lineTo(width, height); ctx.fill();
-            ctx.fillStyle = '#ff4400'; ctx.shadowBlur = 20; ctx.shadowColor = '#ff4400';
-            ctx.beginPath(); ctx.moveTo(width/2, height/2.5); ctx.lineTo(width/2 - 40, height); ctx.lineTo(width/2, height); ctx.lineTo(width/2 + 20, height/2.5 + 50); ctx.fill();
-            ctx.beginPath(); ctx.moveTo(width*0.75, height/3); ctx.lineTo(width*0.8, height); ctx.lineTo(width*0.85, height); ctx.lineTo(width*0.75 + 20, height/3 + 60); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(0, height); ctx.lineTo(width/4, height/3); ctx.lineTo(width/2, height/4); ctx.lineTo(width*0.75, height/3); ctx.lineTo(width, height); ctx.fill();
+            
+            // Кратер
+            ctx.fillStyle = '#ff4400'; ctx.shadowBlur = 30; ctx.shadowColor = '#ff4400';
+            ctx.beginPath(); ctx.ellipse(width/2, height/4, 40, 15, 0, 0, Math.PI*2); ctx.fill();
             ctx.shadowBlur = 0;
+
+            // Лава
+            ctx.fillStyle = '#ff4400'; ctx.shadowBlur = 20; ctx.shadowColor = '#ff4400';
+            ctx.beginPath(); ctx.moveTo(width/2 - 20, height/4 + 10); ctx.lineTo(width/2 - 60, height); ctx.lineTo(width/2 - 30, height); ctx.lineTo(width/2 + 10, height/4 + 15); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(width*0.75 - 20, height/3 + 20); ctx.lineTo(width*0.8, height); ctx.lineTo(width*0.85, height); ctx.lineTo(width*0.75 + 10, height/3 + 30); ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Дым
+            ctx.fillStyle = 'rgba(50, 50, 50, 0.4)';
+            for(let i=0; i<5; i++) {
+                let dx = Math.sin(Date.now()/1000 + i) * 30;
+                ctx.beginPath(); ctx.arc(width/2 + dx, height/4 - 40 - i*30, 30 + i*10, 0, Math.PI*2); ctx.fill();
+            }
+
+            // Свечение снизу
             const fireGrad = ctx.createRadialGradient(width/2, height, 0, width/2, height, height);
             fireGrad.addColorStop(0, 'rgba(255, 50, 0, 0.4)'); fireGrad.addColorStop(1, 'transparent');
             ctx.fillStyle = fireGrad; ctx.fillRect(0, 0, width, height);
         } 
         else if (currentLoc === 'ice') {
-            ctx.fillStyle = 'rgba(100, 200, 255, 0.15)';
-            for(let i=0; i<8; i++) { let x = i * (width/8) + width/16; ctx.beginPath(); ctx.moveTo(x-20, 0); ctx.lineTo(x+20, 0); ctx.lineTo(x, 80); ctx.fill(); }
-            ctx.fillStyle = 'rgba(100, 200, 255, 0.08)';
-            for(let i=0; i<6; i++) { let x = i * (width/6) + width/12; ctx.beginPath(); ctx.moveTo(x-30, height); ctx.lineTo(x+30, height); ctx.lineTo(x, height-120); ctx.fill(); }
-            ctx.fillStyle = 'rgba(0, 100, 255, 0.1)'; ctx.fillRect(0, height*0.7, width, height*0.3);
+            // Сталактиты (сверху)
+            ctx.fillStyle = 'rgba(100, 200, 255, 0.2)';
+            for(let i=0; i<10; i++) { let x = i * (width/10) + Math.random()*10; ctx.beginPath(); ctx.moveTo(x-15, 0); ctx.lineTo(x+15, 0); ctx.lineTo(x, 40 + Math.random()*60); ctx.fill(); }
+            
+            // Кристаллы (фон)
+            ctx.fillStyle = 'rgba(0, 150, 255, 0.15)';
+            ctx.beginPath(); ctx.moveTo(width*0.1, height); ctx.lineTo(width*0.15, height*0.5); ctx.lineTo(width*0.2, height); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(width*0.8, height); ctx.lineTo(width*0.85, height*0.6); ctx.lineTo(width*0.9, height); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(width*0.45, height); ctx.lineTo(width*0.5, height*0.7); ctx.lineTo(width*0.55, height); ctx.fill();
+
+            // Туман
+            ctx.fillStyle = 'rgba(0, 100, 255, 0.1)'; ctx.fillRect(0, height*0.6, width, height*0.4);
         }
         else if (currentLoc === 'sakura') {
+            // Гора Фудзи
             ctx.fillStyle = '#2a1a2a';
             ctx.beginPath(); ctx.moveTo(0, height); ctx.lineTo(width/2, height/2); ctx.lineTo(width, height); ctx.fill();
             ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.moveTo(width/2 - 40, height/2 + 20); ctx.lineTo(width/2, height/2); ctx.lineTo(width/2 + 40, height/2 + 20); ctx.lineTo(width/2 + 20, height/2 + 30); ctx.lineTo(width/2 - 20, height/2 + 30); ctx.fill();
-            ctx.fillStyle = '#4a2a3a';
-            for(let i=0; i<4; i++) { let tx = width * (0.15 + i*0.25); ctx.fillRect(tx - 5, height * 0.7, 10, height * 0.3); ctx.beginPath(); ctx.arc(tx, height * 0.7, 40, 0, Math.PI*2); ctx.fill(); }
-            ctx.fillStyle = '#ffb7c5';
-            for(let i=0; i<4; i++) { let tx = width * (0.15 + i*0.25); ctx.beginPath(); ctx.arc(tx, height * 0.7, 35, 0, Math.PI*2); ctx.fill(); }
-            for(let i=0; i<4; i++) { ctx.fillStyle = '#ff5722'; ctx.fillRect(i*width/4 + 20, height * 0.8, 6, 10); ctx.fillStyle = '#ffeb3b'; ctx.beginPath(); ctx.arc(i*width/4 + 23, height * 0.8, 3, 0, Math.PI*2); ctx.fill(); }
+            ctx.beginPath(); ctx.moveTo(width/2 - 50, height/2 + 30); ctx.lineTo(width/2, height/2); ctx.lineTo(width/2 + 50, height/2 + 30); ctx.lineTo(width/2 + 20, height/2 + 40); ctx.lineTo(width/2 - 20, height/2 + 40); ctx.fill();
+            
+            // Деревья Сакуры (с ветками)
+            ctx.strokeStyle = '#4a2a3a'; ctx.lineWidth = 8;
+            for(let i=0; i<3; i++) {
+                let tx = width * (0.2 + i*0.3);
+                ctx.beginPath(); ctx.moveTo(tx, height); ctx.quadraticCurveTo(tx - 20, height - 100, tx - 30, height - 200); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(tx - 20, height - 150); ctx.quadraticCurveTo(tx + 20, height - 180, tx + 40, height - 160); ctx.stroke();
+                
+                // Цветы
+                ctx.fillStyle = '#ffb7c5';
+                for(let j=0; j<10; j++) {
+                    let angle = (j / 10) * Math.PI * 2;
+                    let cx = tx - 30 + Math.cos(angle) * 40;
+                    let cy = height - 200 + Math.sin(angle) * 30;
+                    ctx.beginPath(); ctx.arc(cx, cy, 15, 0, Math.PI*2); ctx.fill();
+                }
+                // Лепестки (падают)
+                ctx.fillStyle = 'rgba(255, 182, 193, 0.8)';
+                ctx.beginPath(); ctx.ellipse(tx - 40 + Math.sin(t*2+i)*20, height - 100 + Math.cos(t*3+i)*30, 4, 2, Math.PI/4, 0, Math.PI*2); ctx.fill();
+            }
         }
         else if (currentLoc === 'ocean') {
+            // Кораллы
             ctx.fillStyle = '#e91e63';
-            for(let i=0; i<5; i++) { let cx = i * (width/5) + 30; ctx.beginPath(); ctx.moveTo(cx, height); ctx.quadraticCurveTo(cx + 20, height - 50, cx + 10, height - 80); ctx.quadraticCurveTo(cx, height - 50, cx - 10, height); ctx.fill(); }
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; ctx.lineWidth = 2;
-            for(let i=0; i<5; i++) { ctx.beginPath(); ctx.arc(width * 0.2 + i*40, height * 0.6 + Math.sin(Date.now()/1000 + i)*20, 15 + i*5, 0, Math.PI*2); ctx.stroke(); }
+            for(let i=0; i<6; i++) {
+                let cx = i * (width/6) + 20;
+                ctx.beginPath(); ctx.moveTo(cx, height); ctx.quadraticCurveTo(cx + 15, height - 50, cx + 10, height - 80); ctx.quadraticCurveTo(cx, height - 50, cx - 10, height); ctx.fill();
+            }
+            // Водоросли (качаются)
+            ctx.strokeStyle = '#00e676'; ctx.lineWidth = 6;
+            for(let i=0; i<4; i++) {
+                let wx = width * (0.2 + i*0.2);
+                ctx.beginPath(); ctx.moveTo(wx, height); ctx.quadraticCurveTo(wx + Math.sin(Date.now()/1000 + i)*30, height - 100, wx, height - 200); ctx.stroke();
+            }
+            // Пузыри
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.lineWidth = 2;
+            for(let i=0; i<5; i++) {
+                ctx.beginPath(); ctx.arc(width * 0.2 + i*40, height * 0.6 + Math.sin(Date.now()/1000 + i)*20, 10 + i*5, 0, Math.PI*2); ctx.stroke();
+            }
+            // Свет
             const lightGrad = ctx.createLinearGradient(0, 0, 0, height);
-            lightGrad.addColorStop(0, 'rgba(0, 200, 255, 0.2)'); lightGrad.addColorStop(1, 'transparent');
+            lightGrad.addColorStop(0, 'rgba(0, 200, 255, 0.3)'); lightGrad.addColorStop(1, 'transparent');
             ctx.fillStyle = lightGrad; ctx.fillRect(0, 0, width, height);
         }
 
@@ -899,4 +980,4 @@
 
 </script>
 </body>
-    </html>
+                </html>
